@@ -47,7 +47,6 @@ export default function PatientDetailScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['bottom', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" />
       <Stack.Screen options={{ 
         headerShown: true, 
         title: 'Patient Profile', 

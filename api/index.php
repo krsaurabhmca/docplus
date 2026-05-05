@@ -303,11 +303,16 @@ function patients_handler($conn, $doctor, $method, $id, $sub)
             return patient_profile($conn, $doctor_id, $id);
         }
         if ($id) {
-            $stmt = mysqli_prepare($conn, 'SELECT p.*, c.name AS category_name FROM patients p LEFT JOIN patient_categories c ON c.id = p.category_id WHERE p.id = ? AND p.doctor_id = ?');
+            $stmt = mysqli_prepare($conn, 'SELECT p.*, GROUP_CONCAT(c.name SEPARATOR ", ") AS category_name, GROUP_CONCAT(cl.category_id) AS category_ids FROM patients p LEFT JOIN patient_category_links cl ON cl.patient_id = p.id LEFT JOIN patient_categories c ON c.id = cl.category_id WHERE p.id = ? AND p.doctor_id = ? GROUP BY p.id');
             mysqli_stmt_bind_param($stmt, 'ii', $id, $doctor_id);
             mysqli_stmt_execute($stmt);
             $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-            $row ? api_response(['success' => true, 'data' => $row]) : api_error('Patient not found.', 404);
+            if ($row) {
+                $row['category_ids'] = $row['category_ids'] ? array_map('intval', explode(',', $row['category_ids'])) : [];
+                api_response(['success' => true, 'data' => $row]);
+            } else {
+                api_error('Patient not found.', 404);
+            }
         }
         $q = clean_input($_GET['q'] ?? '');
         $page = api_page();
@@ -323,8 +328,8 @@ function patients_handler($conn, $doctor, $method, $id, $sub)
             $params[] = '%' . $q . '%';
             $params[] = '%' . $q . '%';
         }
-        $total = count_rows($conn, 'SELECT COUNT(*) FROM patients p' . $where, $types, $params);
-        $sql = 'SELECT p.*, c.name AS category_name FROM patients p LEFT JOIN patient_categories c ON c.id = p.category_id' . $where . ' ORDER BY p.id DESC LIMIT ? OFFSET ?';
+        $total = count_rows($conn, 'SELECT COUNT(DISTINCT p.id) FROM patients p LEFT JOIN patient_category_links cl ON cl.patient_id = p.id' . $where, $types, $params);
+        $sql = 'SELECT p.*, GROUP_CONCAT(c.name SEPARATOR ", ") AS category_name FROM patients p LEFT JOIN patient_category_links cl ON cl.patient_id = p.id LEFT JOIN patient_categories c ON c.id = cl.category_id' . $where . ' GROUP BY p.id ORDER BY p.id DESC LIMIT ? OFFSET ?';
         $types .= 'ii';
         $params[] = $limit;
         $params[] = $offset;
@@ -337,30 +342,52 @@ function patients_handler($conn, $doctor, $method, $id, $sub)
     if ($method === 'POST') {
         $input = api_input();
         require_fields($input, ['name']);
-        $category_id = !empty($input['category_id']) ? (int)$input['category_id'] : null;
+        $category_ids = $input['category_ids'] ?? [];
         $name = clean_input($input['name']);
         $age = isset($input['age']) ? (int)$input['age'] : null;
         $gender = clean_input($input['gender'] ?? 'Other');
         $mobile = clean_input($input['mobile'] ?? '');
         $address = clean_input($input['address'] ?? '');
-        $stmt = mysqli_prepare($conn, 'INSERT INTO patients (doctor_id, category_id, name, age, gender, mobile, address) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        mysqli_stmt_bind_param($stmt, 'iisisss', $doctor_id, $category_id, $name, $age, $gender, $mobile, $address);
+        $stmt = mysqli_prepare($conn, 'INSERT INTO patients (doctor_id, name, age, gender, mobile, address) VALUES (?, ?, ?, ?, ?, ?)');
+        mysqli_stmt_bind_param($stmt, 'isisss', $doctor_id, $name, $age, $gender, $mobile, $address);
         mysqli_stmt_execute($stmt);
-        api_response(['success' => true, 'id' => mysqli_insert_id($conn)], 201);
+        $patient_id = mysqli_insert_id($conn);
+
+        if (!empty($category_ids) && is_array($category_ids)) {
+            foreach ($category_ids as $cat_id) {
+                $stmt = mysqli_prepare($conn, 'INSERT IGNORE INTO patient_category_links (patient_id, category_id) VALUES (?, ?)');
+                mysqli_stmt_bind_param($stmt, 'ii', $patient_id, $cat_id);
+                mysqli_stmt_execute($stmt);
+            }
+        }
+        api_response(['success' => true, 'id' => $patient_id], 201);
     }
 
     if (($method === 'PUT' || $method === 'PATCH') && $id) {
         $input = api_input();
         require_fields($input, ['name']);
-        $category_id = !empty($input['category_id']) ? (int)$input['category_id'] : null;
+        $category_ids = $input['category_ids'] ?? [];
         $name = clean_input($input['name']);
         $age = isset($input['age']) ? (int)$input['age'] : null;
         $gender = clean_input($input['gender'] ?? 'Other');
         $mobile = clean_input($input['mobile'] ?? '');
         $address = clean_input($input['address'] ?? '');
-        $stmt = mysqli_prepare($conn, 'UPDATE patients SET category_id = ?, name = ?, age = ?, gender = ?, mobile = ?, address = ? WHERE id = ? AND doctor_id = ?');
-        mysqli_stmt_bind_param($stmt, 'isisssii', $category_id, $name, $age, $gender, $mobile, $address, $id, $doctor_id);
+        $stmt = mysqli_prepare($conn, 'UPDATE patients SET name = ?, age = ?, gender = ?, mobile = ?, address = ? WHERE id = ? AND doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'sisssii', $name, $age, $gender, $mobile, $address, $id, $doctor_id);
         mysqli_stmt_execute($stmt);
+
+        // Update category links
+        $stmt = mysqli_prepare($conn, 'DELETE FROM patient_category_links WHERE patient_id = ?');
+        mysqli_stmt_bind_param($stmt, 'i', $id);
+        mysqli_stmt_execute($stmt);
+
+        if (!empty($category_ids) && is_array($category_ids)) {
+            foreach ($category_ids as $cat_id) {
+                $stmt = mysqli_prepare($conn, 'INSERT IGNORE INTO patient_category_links (patient_id, category_id) VALUES (?, ?)');
+                mysqli_stmt_bind_param($stmt, 'ii', $id, $cat_id);
+                mysqli_stmt_execute($stmt);
+            }
+        }
         api_response(['success' => true, 'message' => 'Patient updated.']);
     }
 
@@ -375,7 +402,7 @@ function patients_handler($conn, $doctor, $method, $id, $sub)
 
 function patient_profile($conn, $doctor_id, $patient_id)
 {
-    $stmt = mysqli_prepare($conn, 'SELECT p.*, c.name AS category_name FROM patients p LEFT JOIN patient_categories c ON c.id = p.category_id WHERE p.id = ? AND p.doctor_id = ?');
+    $stmt = mysqli_prepare($conn, 'SELECT p.*, GROUP_CONCAT(c.name SEPARATOR ", ") AS category_name FROM patients p LEFT JOIN patient_category_links cl ON cl.patient_id = p.id LEFT JOIN patient_categories c ON c.id = cl.category_id WHERE p.id = ? AND p.doctor_id = ? GROUP BY p.id');
     mysqli_stmt_bind_param($stmt, 'ii', $patient_id, $doctor_id);
     mysqli_stmt_execute($stmt);
     $patient = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));

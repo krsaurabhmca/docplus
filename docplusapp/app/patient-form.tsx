@@ -17,7 +17,7 @@ export default function PatientFormScreen() {
     gender: 'Male',
     mobile: '',
     address: '',
-    category_id: ''
+    category_ids: [] as number[]
   });
   const router = useRouter();
 
@@ -58,7 +58,7 @@ export default function PatientFormScreen() {
           gender: result.data.gender,
           mobile: result.data.mobile || '',
           address: result.data.address || '',
-          category_id: result.data.category_id?.toString() || ''
+          category_ids: result.data.category_ids || []
         });
       }
     } catch (error) {
@@ -67,6 +67,17 @@ export default function PatientFormScreen() {
     } finally {
       setFetching(false);
     }
+  };
+
+  const toggleCategory = (catId: number) => {
+    setForm(prev => {
+      const exists = prev.category_ids.includes(catId);
+      if (exists) {
+        return { ...prev, category_ids: prev.category_ids.filter(i => i !== catId) };
+      } else {
+        return { ...prev, category_ids: [...prev.category_ids, catId] };
+      }
+    });
   };
 
   const handleSubmit = async () => {
@@ -182,18 +193,23 @@ export default function PatientFormScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Category</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catScroll}>
+              <Text style={styles.label}>Patient Categories (Select Multiple)</Text>
+              <View style={styles.catGrid}>
                 {categories.map(cat => (
                   <TouchableOpacity 
                     key={cat.id} 
-                    style={[styles.catBtn, form.category_id === cat.id.toString() && styles.catBtnActive]}
-                    onPress={() => setForm(prev => ({ ...prev, category_id: cat.id.toString() }))}
+                    style={[styles.catBtn, form.category_ids.includes(cat.id) && styles.catBtnActive]}
+                    onPress={() => toggleCategory(cat.id)}
                   >
-                    <Text style={[styles.catText, form.category_id === cat.id.toString() && styles.catTextActive]}>{cat.name}</Text>
+                    <Ionicons 
+                      name={form.category_ids.includes(cat.id) ? "checkmark-circle" : "add-circle-outline"} 
+                      size={16} 
+                      color={form.category_ids.includes(cat.id) ? "#12836f" : "#64748b"} 
+                    />
+                    <Text style={[styles.catText, form.category_ids.includes(cat.id) && styles.catTextActive]}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
             </View>
 
             <View style={styles.inputGroup}>
@@ -289,18 +305,25 @@ const styles = StyleSheet.create({
   genderTextActive: {
     color: '#fff',
   },
-  catScroll: {
-    marginHorizontal: -4,
+  catGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   catBtn: {
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: '#f1f5f9',
-    borderRadius: 20,
-    marginHorizontal: 4,
+    borderRadius: 12,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   catBtnActive: {
-    backgroundColor: '#e0f2fe',
+    backgroundColor: '#f1fdfb',
+    borderColor: '#12836f',
   },
   catText: {
     fontSize: 13,
