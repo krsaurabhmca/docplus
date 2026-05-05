@@ -56,11 +56,11 @@ function bind_params($stmt, $types, $params)
 function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url, $variables, $header_type = 'image')
 {
     // The Master Key and Number must always be used together
-    $master_key = "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ";
+    $master_key = "4cXl35Zi6kBMWkOns8Geu9McsrfzwP";
     $master_number = "+918271807608";
 
     $api_key = !empty($doctor['whatsapp_api_key']) ? $doctor['whatsapp_api_key'] : $master_key;
-    
+
     // If using the master key, we MUST use the master number
     if ($api_key === $master_key) {
         $from_number = $master_number;
@@ -72,13 +72,14 @@ function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url
 
     // Ensure numbers have + prefix and proper country code
     $clean_to = preg_replace('/[^0-9]/', '', $to_mobile);
-    if (strlen($clean_to) === 10) $clean_to = "91" . $clean_to;
+    if (strlen($clean_to) === 10)
+        $clean_to = "91" . $clean_to;
     $to = "+" . $clean_to;
     $from = (strpos($from_number, '+') === 0) ? $from_number : ('+' . $from_number);
 
     $payload = [
         "from" => $from,
-        "campaignName" => "DocPlus_Outreach_" . bin2hex(random_bytes(4)),
+        "campaignName" => "DocPlus_Campaign",
         "to" => $to,
         "templateName" => $template_name,
         "components" => [
