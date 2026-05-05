@@ -194,7 +194,10 @@ export default function CampaignFormScreen() {
         <ScrollView contentContainerStyle={styles.scroll}>
           
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>1. Target Audience</Text>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionNumber}><Text style={styles.sectionNumberText}>1</Text></View>
+              <Text style={styles.sectionTitle}>Target Audience</Text>
+            </View>
             <View style={styles.categoryGrid}>
               <TouchableOpacity style={[styles.catBadge, selectedCategories.length === 0 && styles.catBadgeActive]} onPress={() => setSelectedCategories([])}>
                 <Text style={[styles.catText, selectedCategories.length === 0 && styles.catTextActive]}>All Patients</Text>
@@ -210,22 +213,26 @@ export default function CampaignFormScreen() {
           </View>
 
           <View style={[styles.card, { marginTop: 20 }]}>
-            <Text style={styles.sectionTitle}>2. Meta Template Configuration</Text>
+            <View style={styles.sectionHeaderRow}>
+              <View style={styles.sectionNumber}><Text style={styles.sectionNumberText}>2</Text></View>
+              <Text style={styles.sectionTitle}>Campaign Content</Text>
+            </View>
+            
             <TouchableOpacity style={styles.templatePicker} onPress={() => setShowMetaModal(true)}>
               <Ionicons name="logo-whatsapp" size={24} color="#12836f" />
               <View style={{ flex: 1 }}>
                 <Text style={styles.templatePickerLabel}>Selected Meta Template</Text>
                 <Text style={styles.templatePickerText}>
-                  {selectedMetaTemplate ? selectedMetaTemplate.template_name : 'Click to select meta template'}
+                  {selectedMetaTemplate ? selectedMetaTemplate.template_name : 'Select a Meta template...'}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
             </TouchableOpacity>
 
             {internalTemplates.length > 0 && (
-              <View style={{ marginTop: 15 }}>
-                <Text style={styles.label}>Quick Load Saved Content</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+              <View style={{ marginTop: 20 }}>
+                <Text style={styles.label}>Quick Load Saved</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 5 }}>
                   {internalTemplates.map(it => (
                     <TouchableOpacity 
                       key={it.id} 
@@ -258,13 +265,13 @@ export default function CampaignFormScreen() {
                       <TouchableOpacity style={styles.mediaPicker} onPress={pickMedia}>
                         {headerMedia ? (
                           <View style={styles.selectedMediaBox}>
-                            <Ionicons name={selectedMetaTemplate.header_type === 'Image' ? "image" : "videocam"} size={20} color="#12836f" />
+                            <Ionicons name={selectedMetaTemplate.header_type === 'Image' ? "image" : "videocam"} size={24} color="#12836f" />
                             <Text style={styles.mediaSelectedText} numberOfLines={1}>{headerMedia.split('/').pop()}</Text>
-                            <TouchableOpacity onPress={() => setHeaderMedia('')}><Ionicons name="close-circle" size={18} color="#94a3b8" /></TouchableOpacity>
+                            <TouchableOpacity onPress={() => setHeaderMedia('')}><Ionicons name="close-circle" size={24} color="#94a3b8" /></TouchableOpacity>
                           </View>
                         ) : (
                           <View style={{ alignItems: 'center' }}>
-                            <Ionicons name="cloud-upload-outline" size={32} color="#94a3b8" />
+                            <Ionicons name="cloud-upload-outline" size={32} color="#cbd5e1" />
                             <Text style={styles.mediaPickerText}>Upload {selectedMetaTemplate.header_type}</Text>
                           </View>
                         )}
@@ -275,9 +282,9 @@ export default function CampaignFormScreen() {
                 )}
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Body Message Variables</Text>
+                  <Text style={styles.label}>Message Variables</Text>
                   <View style={styles.variableContainer}>
-                    <Text style={styles.staticText}>Hello</Text>
+                    <Text style={styles.staticText}>Hello,</Text>
                     {variables.map((val, idx) => (
                       <TextInput 
                         key={idx}
@@ -292,20 +299,25 @@ export default function CampaignFormScreen() {
                         multiline
                       />
                     ))}
-                    <Text style={styles.staticText}>Thank you for your valuable time and kind consideration.</Text>
+                    <Text style={styles.staticText}>Regards, DocPlus</Text>
                   </View>
                 </View>
 
                 <View style={styles.previewCard}>
                   <View style={styles.previewHeader}>
-                    <Ionicons name="eye-outline" size={14} color="#0369a1" />
-                    <Text style={styles.previewHeaderText}>Final Message Preview</Text>
+                    <Ionicons name="logo-whatsapp" size={14} color="#64748b" />
+                    <Text style={styles.previewHeaderText}>Real-Time Preview</Text>
                   </View>
-                  <Text style={styles.previewContent}>
-                    Hello{"\n\n"}
-                    {variables.map((v, i) => (v || `{{${i+1}}}`)).join("\n\n")}{"\n\n"}
-                    Thank you for your valuable time and kind consideration.
-                  </Text>
+                  
+                  <View style={styles.whatsappBubble}>
+                    <View style={styles.bubbleTail} />
+                    <Text style={styles.previewContent}>
+                      Hello,{"\n\n"}
+                      {variables.map((v, i) => (v || `{{${i+1}}}`)).join("\n\n")}{"\n\n"}
+                      Regards, DocPlus
+                    </Text>
+                    <Text style={styles.previewTime}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -406,72 +418,54 @@ export default function CampaignFormScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  scroll: { padding: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a', marginBottom: 16 },
+  scroll: { padding: 20, paddingBottom: 50 },
+  card: { backgroundColor: '#fff', borderRadius: 24, padding: 20, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 12, elevation: 2 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  sectionNumber: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#12836f', justifyContent: 'center', alignItems: 'center' },
+  sectionNumberText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a' },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  catBadge: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' },
+  catBadge: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0' },
   catBadgeActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  catText: { fontSize: 12, fontWeight: '600', color: '#64748b' },
+  catText: { fontSize: 12, fontWeight: '700', color: '#64748b' },
   catTextActive: { color: '#fff' },
-  templatePicker: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdfa', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#ccfbf1', gap: 12 },
-  templatePickerLabel: { fontSize: 11, fontWeight: '700', color: '#12836f', textTransform: 'uppercase', marginBottom: 2 },
+  templatePicker: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdfa', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#ccfbf1', gap: 12 },
+  templatePickerLabel: { fontSize: 10, fontWeight: '800', color: '#12836f', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
   templatePickerText: { fontSize: 15, fontWeight: '700', color: '#0f172a' },
   templateDetails: { marginTop: 24 },
   inputGroup: { marginBottom: 24 },
-  label: { fontSize: 13, fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: 12 },
-  input: { backgroundColor: '#f8fafc', borderRadius: 12, padding: 14, fontSize: 15, color: '#0f172a', borderWidth: 1, borderColor: '#e2e8f0' },
-  variableContainer: { backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#e2e8f0' },
-  staticText: { fontSize: 14, color: '#94a3b8', fontWeight: '600', marginVertical: 8 },
-  variableInput: { backgroundColor: '#fff', borderRadius: 10, padding: 12, fontSize: 15, color: '#0f172a', borderWidth: 1, borderColor: '#e2e8f0', marginVertical: 4 },
-  mediaPicker: { height: 100, backgroundColor: '#fff', borderRadius: 16, borderWidth: 2, borderColor: '#e2e8f0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  mediaPickerText: { fontSize: 13, fontWeight: '600', color: '#94a3b8', marginTop: 4 },
+  label: { fontSize: 11, fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+  input: { backgroundColor: '#f8fafc', borderRadius: 16, padding: 16, fontSize: 15, color: '#0f172a', borderWidth: 1, borderColor: '#e2e8f0' },
+  variableContainer: { backgroundColor: '#f8fafc', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: '#e2e8f0' },
+  staticText: { fontSize: 13, color: '#94a3b8', fontWeight: '600', marginVertical: 6 },
+  variableInput: { backgroundColor: '#fff', borderRadius: 12, padding: 14, fontSize: 15, color: '#0f172a', borderWidth: 1, borderColor: '#e2e8f0', marginVertical: 6 },
+  mediaPicker: { height: 120, backgroundColor: '#fff', borderRadius: 20, borderWidth: 2, borderColor: '#e2e8f0', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
+  mediaPickerText: { fontSize: 13, fontWeight: '700', color: '#94a3b8', marginTop: 8 },
   selectedMediaBox: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16 },
   mediaSelectedText: { flex: 1, fontSize: 14, fontWeight: '700', color: '#12836f' },
   loader: { position: 'absolute' },
-  previewCard: { backgroundColor: '#f0f9ff', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#bae6fd' },
+  previewCard: { backgroundColor: '#e5ddd5', borderRadius: 24, padding: 16, borderWidth: 1, borderColor: '#d1d5db', overflow: 'hidden' },
   previewHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  previewHeaderText: { fontSize: 11, fontWeight: '800', color: '#0369a1', textTransform: 'uppercase' },
-  previewContent: { fontSize: 14, color: '#0c4a6e', lineHeight: 20 },
-  sendBtn: { backgroundColor: '#10b981', borderRadius: 16, padding: 18, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
-  sendBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  saveTemplateSection: {
-    marginVertical: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
-  },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  internalTemplateChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  internalTemplateChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#6366f1',
-  },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '80%' },
+  previewHeaderText: { fontSize: 10, fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: 1 },
+  whatsappBubble: { backgroundColor: '#fff', borderRadius: 12, borderTopLeftRadius: 0, padding: 8, maxWidth: '90%', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1, alignSelf: 'flex-start', position: 'relative' },
+  bubbleTail: { position: 'absolute', left: -8, top: 0, width: 0, height: 0, borderTopWidth: 0, borderRightWidth: 10, borderBottomWidth: 10, borderLeftWidth: 0, borderTopColor: 'transparent', borderRightColor: '#fff', borderBottomColor: 'transparent', borderLeftColor: 'transparent' },
+  previewContent: { fontSize: 14, color: '#111b21', lineHeight: 20 },
+  previewTime: { fontSize: 10, color: '#667781', alignSelf: 'flex-end', marginTop: 4 },
+  sendBtn: { backgroundColor: '#10b981', borderRadius: 20, padding: 18, alignItems: 'center', justifyContent: 'center', marginTop: 12, shadowColor: '#10b981', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 4 },
+  sendBtnText: { color: '#fff', fontWeight: '800', fontSize: 16, letterSpacing: 0.5 },
+  saveTemplateSection: { marginVertical: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  checkboxContainer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  checkboxLabel: { fontSize: 14, fontWeight: '700', color: '#475569' },
+  internalTemplateChip: { paddingHorizontal: 14, paddingVertical: 10, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 4, elevation: 1 },
+  internalTemplateChipText: { fontSize: 12, fontWeight: '800', color: '#6366f1' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '85%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
-  templateItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  templateName: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
-  templateMeta: { fontSize: 12, color: '#64748b', marginTop: 2 },
-  emptyText: { textAlign: 'center', color: '#94a3b8', fontSize: 14 },
+  modalTitle: { fontSize: 20, fontWeight: '900', color: '#0f172a' },
+  templateItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#f8fafc' },
+  templateName: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
+  templateMeta: { fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: '600' },
+  emptyText: { textAlign: 'center', color: '#94a3b8', fontSize: 14, fontWeight: '600' },
   addBtn: { marginTop: 12, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#e6f4f1', borderRadius: 10 },
   addBtnText: { color: '#12836f', fontWeight: '700' }
 });
