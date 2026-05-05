@@ -2,14 +2,16 @@
 date_default_timezone_set('Asia/Kolkata');
 // Environment Detection
 $is_live = (($_SERVER['HTTP_HOST'] ?? '') === 'docplus.offerplant.com');
+$env_path = __DIR__ . '/env.php';
+$env = file_exists($env_path) ? require $env_path : [];
 
 if ($is_live) {
-    // Live Database Credentials (Hostinger/Remote)
-    $db_host = 'localhost'; // Usually 'localhost' on shared hosting
-    $db_user = 'u960515621_docplus';
-    $db_pass = '@DocsPlus_2001';
-    $db_name = 'u960515621_docplus';
-    define('CONFIG_BASE_URL', 'https://docplus.offerplant.com');
+    // Live Database Credentials (from env.php)
+    $db_host = $env['DB_HOST'] ?? 'localhost';
+    $db_user = $env['DB_USER'] ?? '';
+    $db_pass = $env['DB_PASS'] ?? '';
+    $db_name = $env['DB_NAME'] ?? '';
+    define('CONFIG_BASE_URL', $env['BASE_URL'] ?? '');
 } else {
     // Local Database Credentials (XAMPP)
     $db_host = 'localhost';

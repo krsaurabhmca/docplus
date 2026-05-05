@@ -55,14 +55,17 @@ function bind_params($stmt, $types, $params)
 
 function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url, $variables, $header_type = 'image')
 {
-    // The Master Key and Number must always be used together
-    $master_key = "4cXl35Zi6kBMWkOns8Geu9McsrfzwP";
-    $master_number = "+918271807608";
+    // Load Master Credentials from env.php
+    $env_path = dirname(__DIR__) . '/config/env.php';
+    $env = file_exists($env_path) ? require $env_path : [];
+    
+    $master_key = $env['MASTER_WHATSAPP_KEY'] ?? "";
+    $master_number = $env['MASTER_WHATSAPP_NUMBER'] ?? "";
 
     $api_key = !empty($doctor['whatsapp_api_key']) ? $doctor['whatsapp_api_key'] : $master_key;
 
     // If using the master key, we MUST use the master number
-    if ($api_key === $master_key) {
+    if ($api_key === $master_key && !empty($master_key)) {
         $from_number = $master_number;
     } else {
         $from_number = !empty($doctor['whatsapp_from']) ? $doctor['whatsapp_from'] : $master_number;

@@ -1,5 +1,5 @@
 export const CONFIG = {
-    BASE_URL: 'https://docplus.offerplant.com',
-    API_BASE: 'https://docplus.offerplant.com/api/index.php',
-    API_TOKEN_KEY: 'docplus_auth_token',
+    BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost/docplus',
+    API_BASE: (process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost/docplus') + '/api/index.php',
+    API_TOKEN_KEY: process.env.EXPO_PUBLIC_API_TOKEN_KEY || 'docplus_auth_token',
 };

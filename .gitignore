@@ -1,0 +1,24 @@
+# PHP
+.env
+config/env.php
+config/db_credentials.php
+
+# Node
+node_modules/
+.expo/
+dist/
+build/
+android/app/build/
+android/.gradle/
+ios/Pods/
+
+# System
+.DS_Store
+Thumbs.db
+.gemini/
+.idea/
+.vscode/
+
+# Project Specific
+docplusapp/.env
+docplusapp/Config.local.ts
