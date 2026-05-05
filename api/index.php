@@ -96,7 +96,7 @@ function api_page()
 function api_limit()
 {
     $limit = (int)($_GET['limit'] ?? 20);
-    return min(100, max(1, $limit));
+    return min(2000, max(1, $limit));
 }
 
 function list_response($items, $total, $page, $limit)

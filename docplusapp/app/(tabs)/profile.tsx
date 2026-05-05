@@ -50,34 +50,65 @@ export default function ProfileScreen() {
       const result = await response.json();
       if (result.success) {
         const t = result.data.today;
-        const msg = `*DocPlus Daily Report*\nDate: ${new Date().toLocaleDateString()}\n\nNew Patients: ${t.new}\nScheduled Follow-ups: ${t.scheduled}\nActual Re-visits: ${t.actual}\n\nTotal Income: ₹${result.data.summary.total_income}`;
-        const fileUri = FileSystem.cacheDirectory + 'report.txt';
-        await FileSystem.writeAsStringAsync(fileUri, msg);
-        await Sharing.shareAsync(fileUri);
+        const msg = `*DocPlus Daily Report*\nDate: ${new Date().toLocaleDateString()}\n\nNew Patients: ${t.new}\nScheduled Follow-ups: ${t.scheduled}\nActual Re-visits: ${t.actual}\n\nTotal Income: ₹${Math.round(result.data.summary.total_income)}`;
+        
+        const fileUri = FileSystem.cacheDirectory + 'daily_report.txt';
+        await FileSystem.writeAsStringAsync(fileUri, msg, { encoding: FileSystem.EncodingType.UTF8 });
+        
+        const available = await Sharing.isAvailableAsync();
+        if (available) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/plain',
+            dialogTitle: 'Share Daily Report',
+            UTI: 'public.plain-text'
+          });
+        } else {
+          Alert.alert('Sharing Not Available', 'Sharing is not supported on this device.');
+        }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to share report');
+      Alert.alert('Error', 'Failed to generate daily report.');
     }
   };
 
   const exportCSV = async () => {
     try {
       const token = await SecureStore.getItemAsync(CONFIG.API_TOKEN_KEY);
-      const response = await fetch(`${CONFIG.API_BASE}?route=patients&limit=1000`, {
+      // Fetching with high limit for full export
+      const response = await fetch(`${CONFIG.API_BASE}?route=patients&limit=2000`, {
         headers: { 'Authorization': `Bearer ${token}`, 'X-API-Token': token }
       });
       const result = await response.json();
       if (result.success) {
         const patients = result.data;
-        const header = 'Name,Mobile,Age,Gender,Address\n';
-        const rows = patients.map((p: any) => `"${p.name}","${p.mobile}","${p.age}","${p.gender}","${p.address || ''}"`).join('\n');
+        if (!patients || patients.length === 0) {
+          Alert.alert('Empty', 'No patients found to export.');
+          return;
+        }
+
+        const header = 'Name,Mobile,Age,Gender,Address,Category\n';
+        const rows = patients.map((p: any) => 
+          `"${p.name}","${p.mobile}","${p.age}","${p.gender}","${(p.address || '').replace(/"/g, '""')}","${(p.category_name || '').replace(/"/g, '""')}"`
+        ).join('\n');
+        
         const csv = header + rows;
-        const fileUri = FileSystem.cacheDirectory + 'patients_export.csv';
-        await FileSystem.writeAsStringAsync(fileUri, csv);
-        await Sharing.shareAsync(fileUri);
+        const fileUri = FileSystem.cacheDirectory + 'patients_database.csv';
+        
+        await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
+        
+        const available = await Sharing.isAvailableAsync();
+        if (available) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/csv',
+            dialogTitle: 'Export Patient Database',
+            UTI: 'public.comma-separated-values-text'
+          });
+        } else {
+          Alert.alert('Sharing Not Available', 'Sharing is not supported on this device.');
+        }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to export CSV');
+      Alert.alert('Error', 'Failed to export CSV database.');
     }
   };
 
