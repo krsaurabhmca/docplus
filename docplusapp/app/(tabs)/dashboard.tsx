@@ -183,9 +183,9 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <TouchableOpacity onPress={() => router.push('/appointments')}>
-            <Text style={styles.seeAll}>See All</Text>
+          <Text style={styles.sectionTitle}>Recent Outreach</Text>
+          <TouchableOpacity onPress={() => router.push('/campaign-history')}>
+            <Text style={styles.seeAll}>View Logs</Text>
           </TouchableOpacity>
         </View>
 
