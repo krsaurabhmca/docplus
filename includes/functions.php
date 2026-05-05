@@ -1,12 +1,12 @@
 <?php
 function clean_input($value)
 {
-    return trim((string)$value);
+    return trim((string) $value);
 }
 
 function e($value)
 {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
 function redirect($path)
@@ -33,7 +33,7 @@ function flash_show()
 
 function current_doctor_id()
 {
-    return isset($_SESSION['doctor_id']) ? (int)$_SESSION['doctor_id'] : 0;
+    return isset($_SESSION['doctor_id']) ? (int) $_SESSION['doctor_id'] : 0;
 }
 
 function doctor_fee($conn, $doctor_id)
@@ -43,28 +43,87 @@ function doctor_fee($conn, $doctor_id)
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $row = mysqli_fetch_assoc($result);
-    return $row ? (float)$row['fee'] : 0;
+    return $row ? (float) $row['fee'] : 0;
 }
 
-function bind_params($stmt, $types, &$params)
+function bind_params($stmt, $types, $params)
 {
-    $refs = [];
-    foreach ($params as $key => &$value) {
-        $refs[$key] = &$value;
+    if (empty($params))
+        return;
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+}
+
+function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url, $variables, $header_type = 'image')
+{
+    // Use working credentials as defaults if doctor config is missing
+    $api_key = !empty($doctor['whatsapp_api_key']) ? $doctor['whatsapp_api_key'] : "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ";
+    $from_number = !empty($doctor['whatsapp_from']) ? $doctor['whatsapp_from'] : "+918271807608";
+
+    $url = "https://api.aoc-portal.com/v1/whatsapp";
+
+    // Ensure numbers have + prefix and proper country code
+    $clean_to = preg_replace('/[^0-9]/', '', $to_mobile);
+    if (strlen($clean_to) === 10) $clean_to = "91" . $clean_to;
+    $to = "+" . $clean_to;
+    $from = (strpos($from_number, '+') === 0) ? $from_number : ('+' . $from_number);
+
+    $payload = [
+        "from" => $from,
+        "campaignName" => "DocPlus_Outreach",
+        "to" => $to,
+        "templateName" => $template_name,
+        "components" => [
+            "body" => [
+                "params" => $variables
+            ]
+        ],
+        "type" => "template"
+    ];
+
+    if ($header_url) {
+        $type = strtolower($header_type);
+        $payload["components"]["header"] = [
+            "type" => $type,
+            $type => [
+                "link" => $header_url
+            ]
+        ];
     }
-    mysqli_stmt_bind_param($stmt, $types, ...$refs);
+
+    $headers = [
+        "Content-Type: application/json",
+        "apikey: " . $api_key
+    ];
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+    ]);
+
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    if ($error)
+        return ['success' => false, 'message' => $error];
+
+    $res = json_decode($response, true);
+    return ['success' => true, 'api_response' => $res];
 }
 
 function count_rows($conn, $sql, $types = '', $params = [])
 {
     $stmt = mysqli_prepare($conn, $sql);
-    if ($types !== '') {
-        bind_params($stmt, $types, $params);
+    if ($types !== '' && !empty($params)) {
+        mysqli_stmt_bind_param($stmt, $types, ...$params);
     }
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $row = mysqli_fetch_row($result);
-    return (int)($row[0] ?? 0);
+    return (int) ($row[0] ?? 0);
 }
 
 function icon($name)
@@ -93,6 +152,8 @@ function icon($name)
         'call' => '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.63 2.6a2 2 0 0 1-.45 2.11L8 9.72a16 16 0 0 0 6.28 6.28l1.29-1.29a2 2 0 0 1 2.11-.45c.83.3 1.7.51 2.6.63A2 2 0 0 1 22 16.92Z"/>',
         'whatsapp' => '<path d="M20.5 11.8a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.3-4.7a8.5 8.5 0 1 1 16.2-4Z"/><path d="M8.8 8.6c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.4l.8 1.9c.1.2.1.4 0 .6l-.5.7c-.1.2-.2.3 0 .6.6 1 1.4 1.8 2.5 2.3.3.2.4.1.6-.1l.7-.9c.2-.2.4-.2.6-.1l1.9.9c.3.1.4.3.4.5-.1.7-.5 1.4-1.1 1.7-.6.3-2.5.4-5.1-1.5-2.6-1.9-4-4.6-4.1-5.6-.1-.5.3-1.2.5-1.4Z"/>',
         'view' => '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+        'asc' => '<path d="m18 15-6-6-6 6"/>',
+        'desc' => '<path d="m6 9 6 6 6-6"/>',
     ];
 
     $path = $icons[$name] ?? $icons['overview'];
@@ -101,13 +162,13 @@ function icon($name)
 
 function page_number()
 {
-    return max(1, (int)($_GET['page'] ?? 1));
+    return max(1, (int) ($_GET['page'] ?? 1));
 }
 
 function page_size()
 {
     $allowed = [10, 20, 50, 100];
-    $size = (int)($_GET['limit'] ?? 10);
+    $size = (int) ($_GET['limit'] ?? 10);
     return in_array($size, $allowed, true) ? $size : 10;
 }
 
@@ -130,13 +191,16 @@ function sort_link($label, $column, $current_sort, $current_dir)
     $params['sort'] = $column;
     $params['dir'] = ($current_sort === $column && $current_dir === 'ASC') ? 'DESC' : 'ASC';
     $params['page'] = 1;
-    $arrow = $current_sort === $column ? ($current_dir === 'ASC' ? ' up' : ' down') : '';
-    return '<a class="sort-link" href="?' . http_build_query($params) . '">' . e($label) . '<span>' . e($arrow) . '</span></a>';
+    $icon = '';
+    if ($current_sort === $column) {
+        $icon = icon($current_dir === 'ASC' ? 'asc' : 'desc');
+    }
+    return '<a class="sort-link" href="?' . http_build_query($params) . '">' . e($label) . $icon . '</a>';
 }
 
 function pagination($total, $page, $limit)
 {
-    $pages = max(1, (int)ceil($total / $limit));
+    $pages = max(1, (int) ceil($total / $limit));
     if ($pages <= 1) {
         return '';
     }

@@ -23,16 +23,20 @@ $page_title = 'Appointment Calendar';
 $page_subtitle = 'Scan the month and spot upcoming visits quickly.';
 require_once 'includes/header.php';
 ?>
-<section class="card calendar-toolbar">
-    <a class="btn" href="calendar.php?month=<?php echo e($prev_month); ?>"><?php echo icon('prev'); ?> Previous</a>
-    <div class="calendar-title">
-        <strong><?php echo e(date('F Y', strtotime($start))); ?></strong>
-        <form method="get" class="actions">
-            <input type="month" name="month" value="<?php echo e($month); ?>">
-            <button class="btn btn-soft" type="submit">Go</button>
-        </form>
+<section class="card calendar-toolbar" style="padding: 12px 20px;">
+    <div style="display:flex; gap:10px;">
+        <a class="btn" href="calendar.php?month=<?php echo e($prev_month); ?>"><?php echo icon('prev'); ?></a>
+        <a class="btn" href="calendar.php?month=<?php echo e($next_month); ?>"><?php echo icon('next'); ?></a>
     </div>
-    <a class="btn" href="calendar.php?month=<?php echo e($next_month); ?>">Next <?php echo icon('next'); ?></a>
+    
+    <div class="calendar-title">
+        <h2 style="margin:0; font-size: 20px;"><?php echo e(date('F Y', strtotime($start))); ?></h2>
+    </div>
+
+    <form method="get" class="actions" style="gap: 6px;">
+        <input type="month" name="month" value="<?php echo e($month); ?>" style="min-height: 36px; padding: 4px 10px; width: 160px;">
+        <button class="btn btn-primary" type="submit" style="min-height: 36px;">Go</button>
+    </form>
 </section>
 
 <section class="calendar" style="margin-top:16px;">

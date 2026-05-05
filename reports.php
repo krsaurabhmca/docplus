@@ -40,33 +40,57 @@ require_once 'includes/header.php';
                     <option value="<?php echo $size; ?>" <?php echo $limit === $size ? 'selected' : ''; ?>><?php echo $size; ?> rows</option>
                 <?php endforeach; ?>
             </select>
-            <button class="btn" type="submit"><?php echo icon('reports'); ?> Run Report</button>
+            <button class="btn btn-primary" type="submit"><?php echo icon('reports'); ?> Run Report</button>
         </div>
         <?php date_range_controls($range, $from, $to); ?>
     </form>
 </section>
 
-<section class="grid grid-4" style="margin-top:16px;">
-    <div class="card metric"><span>Income</span><strong>Rs. <?php echo number_format((float)$summary['total_income'], 2); ?></strong></div>
-    <div class="card metric"><span>Appointments</span><strong><?php echo (int)$summary['total_appointments']; ?></strong></div>
-    <div class="card metric"><span>New Patients</span><strong><?php echo $new_count; ?></strong></div>
-    <div class="card metric"><span>Old Patients</span><strong><?php echo $old_count; ?></strong></div>
+<section class="grid grid-4" style="margin-top:12px;">
+    <div class="card metric">
+        <?php echo icon('reports'); ?><div class="metric-icon"></div>
+        <span>Income</span>
+        <strong>Rs. <?php echo number_format((float)$summary['total_income'], 2); ?></strong>
+    </div>
+    <div class="card metric">
+        <?php echo icon('calendar'); ?><div class="metric-icon"></div>
+        <span>Appointments</span>
+        <strong><?php echo (int)$summary['total_appointments']; ?></strong>
+    </div>
+    <div class="card metric">
+        <?php echo icon('plus'); ?><div class="metric-icon"></div>
+        <span>New Patients</span>
+        <strong><?php echo $new_count; ?></strong>
+    </div>
+    <div class="card metric">
+        <?php echo icon('patients'); ?><div class="metric-icon"></div>
+        <span>Old Patients</span>
+        <strong><?php echo $old_count; ?></strong>
+    </div>
 </section>
 
-<section class="grid grid-2" style="margin-top:16px;">
+<section class="report-grid">
     <div class="card">
-        <h2>Income & Appointment Report</h2>
+        <div class="toolbar">
+            <h2>Income & Appointment Report</h2>
+        </div>
         <div class="table-wrap">
             <table>
-                <thead><tr><th><?php echo sort_link('Date', 'date', $sort, $dir); ?></th><th><?php echo sort_link('Appointments', 'visits', $sort, $dir); ?></th><th><?php echo sort_link('Income', 'income', $sort, $dir); ?></th></tr></thead>
+                <thead>
+                    <tr>
+                        <th><?php echo sort_link('Date', 'date', $sort, $dir); ?></th>
+                        <th><?php echo sort_link('Appointments', 'visits', $sort, $dir); ?></th>
+                        <th><?php echo sort_link('Income', 'income', $sort, $dir); ?></th>
+                    </tr>
+                </thead>
                 <tbody>
                 <?php if (mysqli_num_rows($daily) === 0): ?>
                     <tr><td colspan="3" class="empty-cell">No report data in this date range.</td></tr>
                 <?php endif; ?>
                 <?php while ($row = mysqli_fetch_assoc($daily)): ?>
                     <tr>
-                        <td><?php echo e(date('d M Y', strtotime($row['appointment_date']))); ?></td>
-                        <td><?php echo (int)$row['visits']; ?></td>
+                        <td><strong><?php echo e(date('d M Y', strtotime($row['appointment_date']))); ?></strong></td>
+                        <td><?php echo (int)$row['visits']; ?> visits</td>
                         <td>Rs. <?php echo number_format((float)$row['income'], 2); ?></td>
                     </tr>
                 <?php endwhile; ?>
@@ -75,18 +99,43 @@ require_once 'includes/header.php';
         </div>
         <?php echo pagination($daily_total, $page, $limit); ?>
     </div>
+    
     <div class="card">
-        <h2>Patient Category Analysis</h2>
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Category</th><th>Patients</th></tr></thead>
+        <div class="toolbar">
+            <h2>Patient Categories</h2>
+        </div>
+        <div class="table-wrap" style="border:0; box-shadow:none;">
+            <table style="min-width: 0;">
                 <tbody>
-                <?php while ($row = mysqli_fetch_assoc($category_report)): ?>
+                <?php 
+                $categories = [];
+                $max_patients = 0;
+                while ($row = mysqli_fetch_assoc($category_report)) {
+                    $categories[] = $row;
+                    if ($row['total'] > $max_patients) $max_patients = $row['total'];
+                }
+                ?>
+                <?php if (empty($categories)): ?>
+                    <tr><td class="empty-cell">No categories found.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($categories as $row): 
+                    $pct = $max_patients > 0 ? round(($row['total'] / $max_patients) * 100) : 0;
+                ?>
                     <tr>
-                        <td><?php echo e($row['name']); ?></td>
-                        <td><?php echo (int)$row['total']; ?></td>
+                        <td style="padding: 10px 0;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                <strong><?php echo e($row['name']); ?></strong>
+                                <span class="muted"><?php echo $row['total']; ?> patients</span>
+                            </div>
+                            <div class="progress-wrap">
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: <?php echo $pct; ?>%;"></div>
+                                </div>
+                                <span class="progress-val"><?php echo $pct; ?>%</span>
+                            </div>
+                        </td>
                     </tr>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
                 </tbody>
             </table>
         </div>

@@ -3,6 +3,13 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Token');
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    exit;
+}
 
 function api_response($data = [], $status = 200)
 {
@@ -210,9 +217,14 @@ function profile_handler($conn, $doctor, $method)
     $fee_repeat_days = (int)($input['fee_repeat_days'] ?? $doctor['fee_repeat_days']);
     $clinic_name = clean_input($input['clinic_name'] ?? $doctor['clinic_name']);
     $clinic_address = clean_input($input['clinic_address'] ?? $doctor['clinic_address']);
+    $photo_path = clean_input($input['photo_path'] ?? $doctor['photo_path']);
+    $wa_template = clean_input($input['whatsapp_template_name'] ?? $doctor['whatsapp_template_name']);
+    $wa_from = clean_input($input['whatsapp_from'] ?? $doctor['whatsapp_from']);
+    $wa_api_key = clean_input($input['whatsapp_api_key'] ?? $doctor['whatsapp_api_key']);
+    $default_revisit = (int)($input['default_revisit_days'] ?? $doctor['default_revisit_days']);
 
-    $stmt = mysqli_prepare($conn, 'UPDATE doctors SET name = ?, qualification = ?, specialization = ?, fee = ?, fee_repeat_days = ?, clinic_name = ?, clinic_address = ? WHERE id = ?');
-    mysqli_stmt_bind_param($stmt, 'sssdissi', $name, $qualification, $specialization, $fee, $fee_repeat_days, $clinic_name, $clinic_address, $doctor_id);
+    $stmt = mysqli_prepare($conn, 'UPDATE doctors SET name = ?, qualification = ?, specialization = ?, fee = ?, fee_repeat_days = ?, clinic_name = ?, clinic_address = ?, photo_path = ?, whatsapp_template_name = ?, whatsapp_from = ?, whatsapp_api_key = ?, default_revisit_days = ? WHERE id = ?');
+    mysqli_stmt_bind_param($stmt, 'sssdissssssii', $name, $qualification, $specialization, $fee, $fee_repeat_days, $clinic_name, $clinic_address, $photo_path, $wa_template, $wa_from, $wa_api_key, $default_revisit, $doctor_id);
     mysqli_stmt_execute($stmt);
     api_response(['success' => true, 'message' => 'Profile updated.']);
 }
@@ -395,15 +407,25 @@ function appointments_handler($conn, $doctor, $method, $id)
             $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
             $row ? api_response(['success' => true, 'data' => $row]) : api_error('Appointment not found.', 404);
         }
-        $from = clean_input($_GET['from'] ?? date('Y-m-01'));
-        $to = clean_input($_GET['to'] ?? date('Y-m-t'));
+        $from = clean_input($_GET['from'] ?? '');
+        $to = clean_input($_GET['to'] ?? '');
         $q = clean_input($_GET['q'] ?? '');
         $page = api_page();
         $limit = api_limit();
         $offset = ($page - 1) * $limit;
-        $where = ' WHERE a.doctor_id = ? AND a.appointment_date BETWEEN ? AND ?';
-        $types = 'iss';
-        $params = [$doctor_id, $from, $to];
+        
+        $where = ' WHERE a.doctor_id = ?';
+        $types = 'i';
+        $params = [$doctor_id];
+
+        if ($from !== '' && $to !== '') {
+            $date_field = ($_GET['date_type'] ?? 'visit') === 'followup' ? 'a.next_followup_date' : 'a.appointment_date';
+            $where .= " AND $date_field BETWEEN ? AND ?";
+            $types .= 'ss';
+            $params[] = $from;
+            $params[] = $to;
+        }
+
         if ($q !== '') {
             $where .= ' AND (p.name LIKE ? OR p.mobile LIKE ? OR a.remarks LIKE ?)';
             $types .= 'sss';
@@ -460,7 +482,8 @@ function appointments_handler($conn, $doctor, $method, $id)
     api_error('Method not allowed.', 405);
 }
 
-function campaigns_handler($conn, $doctor, $method)
+
+function campaigns_handler($conn, $doctor, $method, $id)
 {
     $doctor_id = (int)$doctor['id'];
     if ($method === 'GET') {
@@ -475,25 +498,77 @@ function campaigns_handler($conn, $doctor, $method)
     }
     if ($method === 'POST') {
         $input = api_input();
-        require_fields($input, ['channel', 'message']);
-        $category_id = !empty($input['category_id']) ? (int)$input['category_id'] : null;
-        $channel = clean_input($input['channel']);
-        $message = clean_input($input['message']);
-        if ($category_id) {
-            $stmt = mysqli_prepare($conn, 'SELECT COUNT(*) AS total FROM patients WHERE doctor_id = ? AND category_id = ? AND mobile IS NOT NULL AND mobile != ""');
-            mysqli_stmt_bind_param($stmt, 'ii', $doctor_id, $category_id);
-        } else {
-            $stmt = mysqli_prepare($conn, 'SELECT COUNT(*) AS total FROM patients WHERE doctor_id = ? AND mobile IS NOT NULL AND mobile != ""');
-            mysqli_stmt_bind_param($stmt, 'i', $doctor_id);
+        
+        $variables = $input['variables'] ?? [];
+        if (isset($input['var1'])) $variables[0] = $input['var1'];
+        if (isset($input['var2'])) $variables[1] = $input['var2'];
+        if (isset($input['var3'])) $variables[2] = $input['var3'];
+
+        $category_ids = $input['category_ids'] ?? [];
+        if (!is_array($category_ids)) $category_ids = [];
+        
+        $body_parts = ["Hello"];
+        foreach ($variables as $v) {
+            if ($v) $body_parts[] = clean_input($v);
         }
-        mysqli_stmt_execute($stmt);
-        $recipients = (int)(mysqli_fetch_assoc(mysqli_stmt_get_result($stmt))['total'] ?? 0);
-        $status = 'Queued';
-        $api_response = 'API provider not configured.';
+        $body_parts[] = "Thank you for your valuable time and kind consideration.";
+        $message = implode("\n\n", $body_parts);
+        
+        $total_recipients = 0;
+        $recipients = [];
+        
+        if (empty($category_ids)) {
+            $stmt = mysqli_prepare($conn, 'SELECT mobile FROM patients WHERE doctor_id = ? AND mobile IS NOT NULL AND mobile != ""');
+            mysqli_stmt_bind_param($stmt, 'i', $doctor_id);
+            mysqli_stmt_execute($stmt);
+            $recipients = rows_from_result(mysqli_stmt_get_result($stmt));
+        } else {
+            $placeholders = implode(',', array_fill(0, count($category_ids), '?'));
+            $types = 'i' . str_repeat('i', count($category_ids));
+            $params = array_merge([$doctor_id], $category_ids);
+            
+            $sql = "SELECT mobile FROM patients WHERE doctor_id = ? AND category_id IN ($placeholders) AND mobile IS NOT NULL AND mobile != \"\"";
+            $stmt = mysqli_prepare($conn, $sql);
+            bind_params($stmt, $types, $params);
+            mysqli_stmt_execute($stmt);
+            $recipients = rows_from_result(mysqli_stmt_get_result($stmt));
+        }
+
+        $total_recipients = count($recipients);
+        $template_name = clean_input($input['template_name'] ?? 'custom_campaign');
+        
+        // Use a publicly accessible URL for 'offline' reliability (local development)
+        // In production, this would be: CONFIG_BASE_URL . '/' . $input['header_media']
+        $full_header_url = "https://offerplant.com/img/hero-img-1.png";
+
+        // Start sending process (In production, this should be a background queue)
+        $sent_count = 0;
+        $api_logs = [];
+        foreach ($recipients as $recipient) {
+            $res = send_whatsapp_template($doctor, $recipient['mobile'], $template_name, $full_header_url, $variables, $input['header_type'] ?? 'image');
+            if ($res['success']) $sent_count++;
+            $api_logs[] = $recipient['mobile'] . ': ' . json_encode($res);
+            
+            // Limit to 5 for demo to prevent timeout
+            if ($sent_count >= 5) break; 
+        }
+
+        $status = 'Completed';
+        $channel = 'WhatsApp';
+        $api_response_summary = 'Sent ' . $sent_count . ' of ' . $total_recipients . ' recipients. Logs: ' . implode(' | ', $api_logs);
+        
+        $cat_id = count($category_ids) === 1 ? $category_ids[0] : null;
         $stmt = mysqli_prepare($conn, 'INSERT INTO campaign_logs (doctor_id, category_id, channel, message, recipients_count, status, api_response) VALUES (?, ?, ?, ?, ?, ?, ?)');
-        mysqli_stmt_bind_param($stmt, 'iississ', $doctor_id, $category_id, $channel, $message, $recipients, $status, $api_response);
+        mysqli_stmt_bind_param($stmt, 'iississ', $doctor_id, $cat_id, $channel, $message, $total_recipients, $status, $api_response_summary);
         mysqli_stmt_execute($stmt);
-        api_response(['success' => true, 'id' => mysqli_insert_id($conn), 'recipients_count' => $recipients], 201);
+        
+        api_response(['success' => true, 'id' => mysqli_insert_id($conn), 'recipients_count' => $total_recipients, 'sent_count' => $sent_count], 201);
+    }
+    if ($method === 'DELETE' && $id) {
+        $stmt = mysqli_prepare($conn, 'DELETE FROM campaign_logs WHERE id = ? AND doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'ii', $id, $doctor_id);
+        mysqli_stmt_execute($stmt);
+        api_response(['success' => true, 'message' => 'Campaign deleted.']);
     }
     api_error('Method not allowed.', 405);
 }
@@ -503,16 +578,54 @@ function reports_handler($conn, $doctor)
     $doctor_id = (int)$doctor['id'];
     $from = clean_input($_GET['from'] ?? date('Y-m-01'));
     $to = clean_input($_GET['to'] ?? date('Y-m-t'));
+    
+    // Overall summary for the period
     $stmt = mysqli_prepare($conn, 'SELECT COALESCE(SUM(fee),0) AS total_income, COUNT(*) AS total_appointments FROM appointments WHERE doctor_id = ? AND appointment_date BETWEEN ? AND ?');
     mysqli_stmt_bind_param($stmt, 'iss', $doctor_id, $from, $to);
     mysqli_stmt_execute($stmt);
     $summary = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    
+    // New vs Old patient counts
     $new_count = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'New' AND appointment_date BETWEEN ? AND ?", 'iss', [$doctor_id, $from, $to]);
     $old_count = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'Old' AND appointment_date BETWEEN ? AND ?", 'iss', [$doctor_id, $from, $to]);
+    
+    // Daily breakdown
     $stmt = mysqli_prepare($conn, 'SELECT appointment_date, COUNT(*) AS visits, COALESCE(SUM(fee),0) AS income FROM appointments WHERE doctor_id = ? AND appointment_date BETWEEN ? AND ? GROUP BY appointment_date ORDER BY appointment_date DESC');
     mysqli_stmt_bind_param($stmt, 'iss', $doctor_id, $from, $to);
     mysqli_stmt_execute($stmt);
-    api_response(['success' => true, 'data' => ['from' => $from, 'to' => $to, 'summary' => $summary, 'new_patients' => $new_count, 'old_patients' => $old_count, 'daily' => rows_from_result(mysqli_stmt_get_result($stmt))]]);
+    $daily = rows_from_result(mysqli_stmt_get_result($stmt));
+
+    $today = date('Y-m-d');
+    
+    // Today's OPD Status
+    $today_new = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'New' AND appointment_date = ?", 'is', [$doctor_id, $today]);
+    $today_scheduled_followup = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND next_followup_date = ?", 'is', [$doctor_id, $today]);
+    $today_actual_followup = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'Old' AND appointment_date = ?", 'is', [$doctor_id, $today]);
+
+    // Future Follow-up Targets (Next 7 days)
+    $stmt = mysqli_prepare($conn, "SELECT next_followup_date, COUNT(*) AS count FROM appointments WHERE doctor_id = ? AND next_followup_date > ? AND next_followup_date <= ? GROUP BY next_followup_date ORDER BY next_followup_date ASC");
+    $next_week = date('Y-m-d', strtotime('+7 days'));
+    mysqli_stmt_bind_param($stmt, 'iss', $doctor_id, $today, $next_week);
+    mysqli_stmt_execute($stmt);
+    $future_followups = rows_from_result(mysqli_stmt_get_result($stmt));
+
+    api_response([
+        'success' => true, 
+        'data' => [
+            'from' => $from, 
+            'to' => $to, 
+            'today' => [
+                'new' => $today_new,
+                'scheduled' => $today_scheduled_followup,
+                'actual' => $today_actual_followup
+            ],
+            'future' => $future_followups,
+            'summary' => $summary, 
+            'new_patients' => $new_count, 
+            'old_patients' => $old_count, 
+            'daily' => $daily
+        ]
+    ]);
 }
 
 function calendar_handler($conn, $doctor)
@@ -556,7 +669,7 @@ switch ($resource) {
         appointments_handler($conn, $doctor, $method, $id);
         break;
     case 'campaigns':
-        campaigns_handler($conn, $doctor, $method);
+        campaigns_handler($conn, $doctor, $method, $id);
         break;
     case 'reports':
         reports_handler($conn, $doctor);
@@ -564,7 +677,136 @@ switch ($resource) {
     case 'calendar':
         calendar_handler($conn, $doctor);
         break;
+    case 'whatsapp-templates':
+        whatsapp_templates_handler($conn, $doctor, $method, $id);
+        break;
+    case 'campaign-templates':
+        campaign_templates_handler($conn, $doctor, $method, $id);
+        break;
+    case 'upload-photo':
+        if ($method !== 'POST') api_error('Method not allowed.', 405);
+        if (!isset($_FILES['photo'])) api_error('No photo uploaded.', 400);
+        $file = $_FILES['photo'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) api_error('Invalid file type.', 400);
+        $name = 'doc_' . $doctor['id'] . '_' . time() . '.' . $ext;
+        $dir = __DIR__ . '/../uploads/doctors/';
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        if (move_uploaded_file($file['tmp_name'], $dir . $name)) {
+            api_response(['success' => true, 'path' => 'uploads/doctors/' . $name]);
+        }
+        api_error('Failed to save file. Check folder permissions.', 500);
+        break;
     default:
         api_error('Endpoint not found.', 404);
+}
+
+function whatsapp_templates_handler($conn, $doctor, $method, $id)
+{
+    $doctor_id = (int)$doctor['id'];
+    if ($method === 'GET') {
+        if ($id) {
+            $stmt = mysqli_prepare($conn, 'SELECT * FROM whatsapp_templates WHERE id = ? AND doctor_id = ?');
+            mysqli_stmt_bind_param($stmt, 'ii', $id, $doctor_id);
+            mysqli_stmt_execute($stmt);
+            $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+            $row ? api_response(['success' => true, 'data' => $row]) : api_error('Template not found.', 404);
+        }
+        $stmt = mysqli_prepare($conn, 'SELECT * FROM whatsapp_templates WHERE doctor_id = ? ORDER BY id DESC');
+        mysqli_stmt_bind_param($stmt, 'i', $doctor_id);
+        mysqli_stmt_execute($stmt);
+        api_response(['success' => true, 'data' => rows_from_result(mysqli_stmt_get_result($stmt))]);
+    }
+    if ($method === 'POST') {
+        $input = api_input();
+        require_fields($input, ['template_name', 'variable_count', 'header_type']);
+        $template_name = clean_input($input['template_name']);
+        $variable_count = (int)$input['variable_count'];
+        $header_type = clean_input($input['header_type']);
+        $body_text = isset($input['body_text']) ? clean_input($input['body_text']) : '';
+        
+        $stmt = mysqli_prepare($conn, 'INSERT INTO whatsapp_templates (doctor_id, template_name, variable_count, header_type, body_text) VALUES (?, ?, ?, ?, ?)');
+        if (!$stmt) {
+            api_error('Failed to prepare template statement: ' . mysqli_error($conn), 500);
+        }
+        
+        mysqli_stmt_bind_param($stmt, 'isiss', $doctor_id, $template_name, $variable_count, $header_type, $body_text);
+        if (mysqli_stmt_execute($stmt)) {
+            api_response(['success' => true, 'id' => mysqli_insert_id($conn)], 201);
+        } else {
+            api_error('Failed to save WhatsApp template: ' . mysqli_stmt_error($stmt), 500);
+        }
+    }
+    if (($method === 'PUT' || $method === 'PATCH') && $id) {
+        $input = api_input();
+        require_fields($input, ['template_name', 'variable_count', 'header_type']);
+        $template_name = clean_input($input['template_name']);
+        $variable_count = (int)$input['variable_count'];
+        $header_type = clean_input($input['header_type']);
+        $body_text = isset($input['body_text']) ? clean_input($input['body_text']) : '';
+
+        $stmt = mysqli_prepare($conn, 'UPDATE whatsapp_templates SET template_name = ?, variable_count = ?, header_type = ?, body_text = ? WHERE id = ? AND doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'sisiii', $template_name, $variable_count, $header_type, $body_text, $id, $doctor_id);
+        if (mysqli_stmt_execute($stmt)) {
+            api_response(['success' => true, 'message' => 'Template updated.']);
+        } else {
+            api_error('Failed to update WhatsApp template: ' . mysqli_stmt_error($stmt), 500);
+        }
+    }
+    if ($method === 'DELETE' && $id) {
+        $stmt = mysqli_prepare($conn, 'DELETE FROM whatsapp_templates WHERE id = ? AND doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'ii', $id, $doctor_id);
+        mysqli_stmt_execute($stmt);
+        api_response(['success' => true, 'message' => 'Template deleted.']);
+    }
+}
+
+function campaign_templates_handler($conn, $doctor, $method, $id)
+{
+    $doctor_id = (int)$doctor['id'];
+    if ($method === 'GET') {
+        if ($id) {
+            $stmt = mysqli_prepare($conn, 'SELECT * FROM campaign_templates WHERE id = ? AND doctor_id = ?');
+            mysqli_stmt_bind_param($stmt, 'ii', $id, $doctor_id);
+            mysqli_stmt_execute($stmt);
+            $row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+            $row ? api_response(['success' => true, 'data' => $row]) : api_error('Template not found.', 404);
+        }
+        $stmt = mysqli_prepare($conn, 'SELECT * FROM campaign_templates WHERE doctor_id = ? ORDER BY id DESC');
+        mysqli_stmt_bind_param($stmt, 'i', $doctor_id);
+        mysqli_stmt_execute($stmt);
+        api_response(['success' => true, 'data' => rows_from_result(mysqli_stmt_get_result($stmt))]);
+    }
+    if ($method === 'POST') {
+        $input = api_input();
+        require_fields($input, ['name', 'var1', 'var2', 'var3', 'image_path']);
+        $stmt = mysqli_prepare($conn, 'INSERT INTO campaign_templates (doctor_id, name, var1, var2, var3, image_path) VALUES (?, ?, ?, ?, ?, ?)');
+        mysqli_stmt_bind_param($stmt, 'isssss', $doctor_id, $input['name'], $input['var1'], $input['var2'], $input['var3'], $input['image_path']);
+        mysqli_stmt_execute($stmt);
+        api_response(['success' => true, 'id' => mysqli_insert_id($conn)], 201);
+    }
+    if (($method === 'PUT' || $method === 'PATCH') && $id) {
+        $input = api_input();
+        require_fields($input, ['name', 'var1', 'var2', 'var3']);
+        $name = clean_input($input['name']);
+        $v1 = clean_input($input['var1']);
+        $v2 = clean_input($input['var2']);
+        $v3 = clean_input($input['var3']);
+        $img = $input['image_path'] ?? '';
+
+        $stmt = mysqli_prepare($conn, 'UPDATE campaign_templates SET name = ?, var1 = ?, var2 = ?, var3 = ?, image_path = ? WHERE id = ? AND doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'sssssii', $name, $v1, $v2, $v3, $img, $id, $doctor_id);
+        if (mysqli_stmt_execute($stmt)) {
+            api_response(['success' => true, 'message' => 'Internal template updated.']);
+        } else {
+            api_error('Failed to update template: ' . mysqli_stmt_error($stmt), 500);
+        }
+    }
+    if ($method === 'DELETE' && $id) {
+        $stmt = mysqli_prepare($conn, 'DELETE FROM campaign_templates WHERE id = ? AND doctor_id = ?');
+        mysqli_stmt_bind_param($stmt, 'ii', $id, $doctor_id);
+        mysqli_stmt_execute($stmt);
+        api_response(['success' => true, 'message' => 'Template deleted.']);
+    }
 }
 ?>
