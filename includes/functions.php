@@ -57,7 +57,13 @@ function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url
 {
     // Use working credentials as defaults if doctor config is missing
     $api_key = !empty($doctor['whatsapp_api_key']) ? $doctor['whatsapp_api_key'] : "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ";
-    $from_number = !empty($doctor['whatsapp_from']) ? $doctor['whatsapp_from'] : "+918271807608";
+    
+    // If using the default master key, we must use the master authorized number
+    if ($api_key === "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ") {
+        $from_number = "+918271807608";
+    } else {
+        $from_number = !empty($doctor['whatsapp_from']) ? $doctor['whatsapp_from'] : "+918271807608";
+    }
 
     $url = "https://api.aoc-portal.com/v1/whatsapp";
 
