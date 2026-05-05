@@ -137,9 +137,16 @@ export default function CampaignFormScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar style="dark" />
-      <Stack.Screen options={{ title: 'Meta Campaign Builder', headerShadowVisible: false }} />
+      <Stack.Screen options={{ 
+        headerShown: true,
+        title: 'Meta Campaign Builder', 
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: '#f8fafc' },
+        headerTintColor: '#0f172a',
+        headerTitleStyle: { fontWeight: '800' }
+      }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll}>
           

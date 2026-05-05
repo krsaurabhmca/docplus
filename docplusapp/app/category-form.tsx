@@ -83,9 +83,16 @@ export default function CategoryFormScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar style="dark" />
-      <Stack.Screen options={{ title: id ? 'Edit Category' : 'New Category', headerShadowVisible: false }} />
+      <Stack.Screen options={{ 
+        headerShown: true,
+        title: id ? 'Edit Category' : 'New Category', 
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: '#f8fafc' },
+        headerTintColor: '#0f172a',
+        headerTitleStyle: { fontWeight: '800' }
+      }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.card}>

@@ -90,25 +90,20 @@ export default function CategoryListScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar style="dark" />
       <Stack.Screen options={{ 
         headerShown: true,
         title: 'Patient Categories', 
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: '#f8fafc' },
-        headerTitleStyle: { fontSize: 18, fontWeight: '800', color: '#0f172a' }
+        headerStyle: { backgroundColor: '#fff' },
+        headerTitleStyle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+        headerRight: () => (
+          <TouchableOpacity style={styles.headerAddBtn} onPress={() => router.push('/category-form')}>
+            <Ionicons name="add" size={24} color="#12836f" />
+          </TouchableOpacity>
+        )
       }} />
-      
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Manage Groups</Text>
-          <Text style={styles.headerSubtitle}>Organize your patients for better outreach</Text>
-        </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/category-form')}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
 
       <FlatList
         data={categories}
@@ -138,6 +133,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
   headerSubtitle: { fontSize: 12, color: '#64748b', marginTop: 2 },
   addBtn: { backgroundColor: '#12836f', width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', shadowColor: '#12836f', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  headerAddBtn: { marginRight: 16, padding: 4 },
   list: { padding: 16 },
   card: { backgroundColor: '#fff', borderRadius: 20, padding: 18, marginBottom: 12, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 1 },
   cardContent: { flex: 1 },

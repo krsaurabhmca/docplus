@@ -67,150 +67,150 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['left', 'right']}>
-      <ScrollView 
-        style={styles.container} 
+      <ScrollView
+        style={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} color="#12836f" />}
       >
-      <View style={styles.header}>
+        {/* <View style={styles.header}>
         <Text style={styles.welcome}>Welcome back,</Text>
         <Text style={styles.title}>Clinic Overview</Text>
-      </View>
+      </View> */}
 
-      <View style={styles.todayCard}>
-        <Text style={styles.todayTitle}>Today's OPD Status</Text>
-        <View style={styles.todayGrid}>
-          <View style={styles.todayItem}>
-            <Text style={styles.todayLabel}>New Patients</Text>
-            <Text style={styles.todayValue}>{data?.today?.new || 0}</Text>
-          </View>
-          <View style={styles.todayItem}>
-            <Text style={styles.todayLabel}>Scheduled</Text>
-            <Text style={[styles.todayValue, { color: '#6366f1' }]}>{data?.today?.scheduled || 0}</Text>
-          </View>
-          <View style={styles.todayItem}>
-            <Text style={styles.todayLabel}>Actual Revisit</Text>
-            <Text style={[styles.todayValue, { color: '#12836f' }]}>{data?.today?.actual || 0}</Text>
+        <View style={styles.todayCard}>
+          <Text style={styles.todayTitle}>Today's OPD Status</Text>
+          <View style={styles.todayGrid}>
+            <View style={styles.todayItem}>
+              <Text style={styles.todayLabel}>New Patients</Text>
+              <Text style={styles.todayValue}>{data?.today?.new || 0}</Text>
+            </View>
+            <View style={styles.todayItem}>
+              <Text style={styles.todayLabel}>Scheduled</Text>
+              <Text style={[styles.todayValue, { color: '#6366f1' }]}>{data?.today?.scheduled || 0}</Text>
+            </View>
+            <View style={styles.todayItem}>
+              <Text style={styles.todayLabel}>Actual Revisit</Text>
+              <Text style={[styles.todayValue, { color: '#12836f' }]}>{data?.today?.actual || 0}</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.metricsGrid}>
-        <View style={styles.metricCard}>
-          <View style={[styles.iconContainer, { backgroundColor: '#e0f2fe' }]}>
-            <Ionicons name="people-outline" size={24} color="#0369a1" />
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#e0f2fe' }]}>
+              <Ionicons name="people-outline" size={24} color="#0369a1" />
+            </View>
+            <Text style={styles.metricLabel}>Total Patients</Text>
+            <Text style={styles.metricValue}>{data?.total_patients || 0}</Text>
           </View>
-          <Text style={styles.metricLabel}>Total Patients</Text>
-          <Text style={styles.metricValue}>{data?.total_patients || 0}</Text>
+
+          <View style={styles.metricCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#ecfdf5' }]}>
+              <Ionicons name="cash-outline" size={24} color="#059669" />
+            </View>
+            <Text style={styles.metricLabel}>Month Income</Text>
+            <Text style={styles.metricValue}>₹{Math.round(data?.summary?.total_income || 0)}</Text>
+          </View>
         </View>
 
-        <View style={styles.metricCard}>
-          <View style={[styles.iconContainer, { backgroundColor: '#ecfdf5' }]}>
-            <Ionicons name="cash-outline" size={24} color="#059669" />
+        <View style={styles.metricsGrid}>
+          <View style={styles.metricCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+              <Ionicons name="calendar-outline" size={24} color="#b45309" />
+            </View>
+            <Text style={styles.metricLabel}>Total Visits</Text>
+            <Text style={styles.metricValue}>{data?.summary?.total_appointments || 0}</Text>
           </View>
-          <Text style={styles.metricLabel}>Month Income</Text>
-          <Text style={styles.metricValue}>₹{Math.round(data?.summary?.total_income || 0)}</Text>
+
+          <View style={styles.metricCard}>
+            <View style={[styles.iconContainer, { backgroundColor: '#f3e8ff' }]}>
+              <Ionicons name="stats-chart-outline" size={24} color="#7e22ce" />
+            </View>
+            <Text style={styles.metricLabel}>Today OPD</Text>
+            <Text style={styles.metricValue}>{(data?.today?.new || 0) + (data?.today?.actual || 0)}</Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.metricsGrid}>
-        <View style={styles.metricCard}>
-          <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
-            <Ionicons name="calendar-outline" size={24} color="#b45309" />
+        {data?.future && data.future.length > 0 && (
+          <View style={styles.futureSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Upcoming Targets</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.futureGrid}>
+              {data.future.map((f: any, i: number) => (
+                <View key={i} style={styles.futureCard}>
+                  <Text style={styles.futureDate}>{new Date(f.next_followup_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
+                  <Text style={styles.futureCount}>{f.count} Patients</Text>
+                </View>
+              ))}
+            </ScrollView>
           </View>
-          <Text style={styles.metricLabel}>Total Visits</Text>
-          <Text style={styles.metricValue}>{data?.summary?.total_appointments || 0}</Text>
-        </View>
-
-        <View style={styles.metricCard}>
-          <View style={[styles.iconContainer, { backgroundColor: '#f3e8ff' }]}>
-            <Ionicons name="stats-chart-outline" size={24} color="#7e22ce" />
-          </View>
-          <Text style={styles.metricLabel}>Today OPD</Text>
-          <Text style={styles.metricValue}>{ (data?.today?.new || 0) + (data?.today?.actual || 0) }</Text>
-        </View>
-      </View>
-
-      {data?.future && data.future.length > 0 && (
-        <View style={styles.futureSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Targets</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.futureGrid}>
-            {data.future.map((f: any, i: number) => (
-              <View key={i} style={styles.futureCard}>
-                <Text style={styles.futureDate}>{new Date(f.next_followup_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
-                <Text style={styles.futureCount}>{f.count} Patients</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-      </View>
-
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/patient-form')}>
-          <View style={[styles.actionIcon, { backgroundColor: '#12836f' }]}>
-            <Ionicons name="person-add" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>Add Patient</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/appointment-form')}>
-          <View style={[styles.actionIcon, { backgroundColor: '#6366f1' }]}>
-            <Ionicons name="calendar" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>New Visit</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.actionRow, { marginTop: -12 }]}>
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/category-list')}>
-          <View style={[styles.actionIcon, { backgroundColor: '#ea580c' }]}>
-            <Ionicons name="grid" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>Categories</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/campaign-form')}>
-          <View style={[styles.actionIcon, { backgroundColor: '#10b981' }]}>
-            <Ionicons name="logo-whatsapp" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>Campaign</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        <TouchableOpacity onPress={() => router.push('/appointments')}>
-          <Text style={styles.seeAll}>See All</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.activityCard}>
-        {data?.recent && data.recent.length > 0 ? (
-          data.recent.map((item: any, index: number) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={[styles.activityItem, index === data.recent.length - 1 && { borderBottomWidth: 0 }]}
-              onPress={() => router.push(`/patient/${item.patient_id}`)}
-            >
-              <View style={styles.activityInfo}>
-                <Text style={styles.activityPatient}>{item.patient_name}</Text>
-                <Text style={styles.activityMeta}>{item.appointment_type} Visit • {new Date(item.appointment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
-              </View>
-              <Text style={styles.activityIncome}>₹{Math.round(item.fee)}</Text>
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text style={styles.empty}>No recent activity found.</Text>
         )}
-      </View>
-      
-      <View style={{ height: 40 }} />
-    </ScrollView>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+        </View>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/patient-form')}>
+            <View style={[styles.actionIcon, { backgroundColor: '#12836f' }]}>
+              <Ionicons name="person-add" size={24} color="#fff" />
+            </View>
+            <Text style={styles.actionText}>Add Patient</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/appointment-form')}>
+            <View style={[styles.actionIcon, { backgroundColor: '#6366f1' }]}>
+              <Ionicons name="calendar" size={24} color="#fff" />
+            </View>
+            <Text style={styles.actionText}>New Visit</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.actionRow, { marginTop: -12 }]}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/category-list')}>
+            <View style={[styles.actionIcon, { backgroundColor: '#ea580c' }]}>
+              <Ionicons name="grid" size={24} color="#fff" />
+            </View>
+            <Text style={styles.actionText}>Categories</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/campaign-form')}>
+            <View style={[styles.actionIcon, { backgroundColor: '#10b981' }]}>
+              <Ionicons name="logo-whatsapp" size={24} color="#fff" />
+            </View>
+            <Text style={styles.actionText}>Campaign</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <TouchableOpacity onPress={() => router.push('/appointments')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.activityCard}>
+          {data?.recent && data.recent.length > 0 ? (
+            data.recent.map((item: any, index: number) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[styles.activityItem, index === data.recent.length - 1 && { borderBottomWidth: 0 }]}
+                onPress={() => router.push(`/patient/${item.patient_id}`)}
+              >
+                <View style={styles.activityInfo}>
+                  <Text style={styles.activityPatient}>{item.patient_name}</Text>
+                  <Text style={styles.activityMeta}>{item.appointment_type} Visit • {new Date(item.appointment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
+                </View>
+                <Text style={styles.activityIncome}>₹{Math.round(item.fee)}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text style={styles.empty}>No recent activity found.</Text>
+          )}
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }

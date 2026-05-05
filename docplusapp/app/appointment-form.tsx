@@ -140,8 +140,9 @@ export default function AppointmentFormScreen() {
           headerShown: true, 
           title: 'Record Visit', 
           headerShadowVisible: false,
+          headerStyle: { backgroundColor: '#f8fafc' },
           headerTintColor: '#0f172a',
-          headerTitleStyle: { fontWeight: '700' }
+          headerTitleStyle: { fontWeight: '800' }
         }} />
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.card}>

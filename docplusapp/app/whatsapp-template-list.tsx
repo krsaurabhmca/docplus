@@ -104,24 +104,20 @@ export default function WhatsAppTemplateListScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar style="dark" />
       <Stack.Screen options={{ 
+        headerShown: true,
         title: 'Meta Templates', 
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: '#f8fafc' },
-        headerTitleStyle: { fontSize: 18, fontWeight: '800', color: '#0f172a' }
+        headerStyle: { backgroundColor: '#fff' },
+        headerTitleStyle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
+        headerRight: () => (
+          <TouchableOpacity style={styles.headerAddBtn} onPress={() => router.push('/whatsapp-template-form')}>
+            <Ionicons name="add" size={24} color="#12836f" />
+          </TouchableOpacity>
+        )
       }} />
-
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Meta WhatsApp</Text>
-          <Text style={styles.headerSubtitle}>Manage your pre-approved templates</Text>
-        </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/whatsapp-template-form')}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
 
       <FlatList
         data={templates}
@@ -151,6 +147,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: '800', color: '#0f172a' },
   headerSubtitle: { fontSize: 12, color: '#64748b', marginTop: 2 },
   addBtn: { backgroundColor: '#12836f', width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', shadowColor: '#12836f', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  headerAddBtn: { marginRight: 16, padding: 4 },
   list: { padding: 16, paddingBottom: 100 },
   card: { backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },

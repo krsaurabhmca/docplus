@@ -135,9 +135,16 @@ export default function ProfileEditScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar style="dark" />
-      <Stack.Screen options={{ title: 'Edit Profile', headerShadowVisible: false }} />
+      <Stack.Screen options={{ 
+        headerShown: true,
+        title: 'Edit Profile', 
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: '#f8fafc' },
+        headerTintColor: '#0f172a',
+        headerTitleStyle: { fontWeight: '800' }
+      }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll}>
           <View style={styles.photoSection}>
