@@ -66,7 +66,7 @@ export default function DashboardScreen() {
       </View>
     );
   }
-
+  return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#12836f' }} edges={['top', 'left', 'right']}>
       <StatusBar style="light" />
       <Stack.Screen options={{ 
