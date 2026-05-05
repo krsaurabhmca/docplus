@@ -72,14 +72,16 @@ function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url
 
     // Ensure numbers have + prefix and proper country code
     $clean_to = preg_replace('/[^0-9]/', '', $to_mobile);
-    if (strlen($clean_to) === 10)
-        $clean_to = "91" . $clean_to;
+    if (strlen($clean_to) === 10) $clean_to = "91" . $clean_to;
     $to = "+" . $clean_to;
-    $from = (strpos($from_number, '+') === 0) ? $from_number : ('+' . $from_number);
+
+    $clean_from = preg_replace('/[^0-9]/', '', $from_number);
+    if (strlen($clean_from) === 10) $clean_from = "91" . $clean_from;
+    $from = "+" . $clean_from;
 
     $payload = [
         "from" => $from,
-        "campaignName" => "DocPlus_Campaign",
+        "campaignName" => "DocPlus_Campaign_" . bin2hex(random_bytes(2)),
         "to" => $to,
         "templateName" => $template_name,
         "components" => [
