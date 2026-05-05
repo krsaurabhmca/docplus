@@ -673,7 +673,7 @@ function calendar_handler($conn, $doctor)
 
 $parts = api_route();
 $resource = $parts[0] ?? '';
-$id = isset($parts[1]) && is_numeric($parts[1]) ? (int)$parts[1] : 0;
+$id = isset($parts[1]) && is_numeric($parts[1]) ? (int)$parts[1] : (isset($_GET['id']) && is_numeric($_GET['id']) ? (int)$_GET['id'] : 0);
 $sub = $parts[2] ?? '';
 $method = api_method();
 
