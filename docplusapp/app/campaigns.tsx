@@ -384,12 +384,18 @@ export default function CampaignsScreen() {
                   </View>
                   <Text style={styles.logMessage} numberOfLines={3}>{log.message}</Text>
                   <View style={styles.logFooter}>
-                    <Text style={styles.logTarget}>
-                      Target: {log.category_name || 'Group/Multiple'}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.logTarget}>
+                        Target: {log.category_name || 'Group/Multiple'}
+                      </Text>
+                      {log.api_response && (
+                        <Text style={styles.logDetailResult} numberOfLines={1}>
+                          {log.api_response.split('. Logs:')[0]}
+                        </Text>
+                      )}
+                    </View>
                     <View style={styles.statsRow}>
-                      <Text style={styles.logRecipients}>{log.recipients_count} Recipients</Text>
-                      <View style={[styles.statusDot, { backgroundColor: log.status === 'Sent' ? '#10b981' : '#f59e0b' }]} />
+                      <View style={[styles.statusDot, { backgroundColor: log.status === 'Completed' ? '#10b981' : '#f59e0b' }]} />
                       <Text style={styles.logStatus}>{log.status}</Text>
                     </View>
                   </View>
@@ -688,6 +694,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#64748b',
+  },
+  logDetailResult: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#12836f',
+    marginTop: 2,
   },
   emptyContainer: {
     alignItems: 'center',

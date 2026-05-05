@@ -14,6 +14,7 @@ export default function CampaignFormScreen() {
   const [categories, setCategories] = useState<any[]>([]);
   const [whatsappTemplates, setWhatsappTemplates] = useState<any[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [showMetaModal, setShowMetaModal] = useState(false);
   const [selectedMetaTemplate, setSelectedMetaTemplate] = useState<any>(null);
   
@@ -25,7 +26,19 @@ export default function CampaignFormScreen() {
   useEffect(() => {
     fetchCategories();
     fetchMetaTemplates();
+    fetchLogs();
   }, []);
+
+  const fetchLogs = async () => {
+    try {
+      const token = await SecureStore.getItemAsync(CONFIG.API_TOKEN_KEY);
+      const response = await fetch(`${CONFIG.API_BASE}?route=campaigns&limit=3`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'X-API-Token': token }
+      });
+      const result = await response.json();
+      if (result.success) setLogs(result.data);
+    } catch (error) {}
+  };
 
   const fetchCategories = async () => {
     try {
@@ -130,7 +143,8 @@ export default function CampaignFormScreen() {
       });
       const result = await response.json();
       if (result.success) {
-        Alert.alert('Launched', `Campaign queued for ${result.recipients_count} recipients.`, [{ text: 'OK', onPress: () => router.back() }]);
+        fetchLogs();
+        Alert.alert('Launched', `Campaign queued for ${result.recipients_count} recipients.`);
       }
     } catch (error) {}
     setLoading(false);
@@ -251,6 +265,29 @@ export default function CampaignFormScreen() {
               disabled={!selectedMetaTemplate || loading}
             >
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.sendBtnText}>Launch Campaign</Text>}
+            </TouchableOpacity>
+          </View>
+
+          {/* Recent History Section */}
+          <View style={{ marginTop: 30 }}>
+            <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Recent Campaigns</Text>
+            {logs.length > 0 ? (
+              logs.map((log) => (
+                <View key={log.id} style={[styles.card, { padding: 16, marginBottom: 12, borderStyle: 'dotted' }]}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>{log.channel} Campaign</Text>
+                    <Text style={{ fontSize: 11, color: '#94a3b8' }}>{new Date(log.created_at).toLocaleDateString()}</Text>
+                  </View>
+                  <Text style={{ fontSize: 12, color: '#12836f', fontWeight: '800' }}>
+                    {log.api_response ? log.api_response.split('. Logs:')[0] : log.status}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No recent campaigns found.</Text>
+            )}
+            <TouchableOpacity style={{ alignItems: 'center', padding: 10 }} onPress={() => router.push('/campaigns')}>
+              <Text style={{ fontSize: 13, color: '#6366f1', fontWeight: '700' }}>View All History</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
