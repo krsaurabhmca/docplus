@@ -554,7 +554,12 @@ function campaigns_handler($conn, $doctor, $method, $id)
             $types = 'i' . str_repeat('i', count($category_ids));
             $params = array_merge([$doctor_id], $category_ids);
             
-            $sql = "SELECT mobile FROM patients WHERE doctor_id = ? AND category_id IN ($placeholders) AND mobile IS NOT NULL AND mobile != \"\"";
+            // Join with patient_category_links for accurate targeting
+            $sql = "SELECT DISTINCT p.mobile FROM patients p 
+                    JOIN patient_category_links cl ON p.id = cl.patient_id 
+                    WHERE p.doctor_id = ? AND cl.category_id IN ($placeholders) 
+                    AND p.mobile IS NOT NULL AND p.mobile != ''";
+            
             $stmt = mysqli_prepare($conn, $sql);
             bind_params($stmt, $types, $params);
             mysqli_stmt_execute($stmt);
@@ -564,20 +569,27 @@ function campaigns_handler($conn, $doctor, $method, $id)
         $total_recipients = count($recipients);
         $template_name = clean_input($input['template_name'] ?? 'custom_campaign');
         
-        // Use a publicly accessible URL for 'offline' reliability (local development)
-        // In production, this would be: CONFIG_BASE_URL . '/' . $input['header_media']
-        $full_header_url = "https://offerplant.com/img/hero-img-1.png";
+        // Use provided header media or fallback to default
+        $header_media = $input['header_media'] ?? '';
+        if ($header_media) {
+            $full_header_url = CONFIG_BASE_URL . '/' . $header_media;
+        } else {
+            $full_header_url = "https://offerplant.com/img/hero-img-1.png";
+        }
 
-        // Start sending process (In production, this should be a background queue)
+        // Start sending process
         $sent_count = 0;
         $api_logs = [];
         foreach ($recipients as $recipient) {
             $res = send_whatsapp_template($doctor, $recipient['mobile'], $template_name, $full_header_url, $variables, $input['header_type'] ?? 'image');
-            if ($res['success']) $sent_count++;
+            if ($res['success']) {
+                $api_res = $res['api_response'] ?? [];
+                // Check if API actually reported success
+                if (isset($api_res['error']) && $api_res['error'] === false) {
+                    $sent_count++;
+                }
+            }
             $api_logs[] = $recipient['mobile'] . ': ' . json_encode($res);
-            
-            // Limit to 5 for demo to prevent timeout
-            if ($sent_count >= 5) break; 
         }
 
         $status = 'Completed';
