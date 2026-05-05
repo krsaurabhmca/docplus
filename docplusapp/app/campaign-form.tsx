@@ -13,6 +13,7 @@ export default function CampaignFormScreen() {
   const [fetchingTemplates, setFetchingTemplates] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [whatsappTemplates, setWhatsappTemplates] = useState<any[]>([]);
+  const [internalTemplates, setInternalTemplates] = useState<any[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [showMetaModal, setShowMetaModal] = useState(false);
@@ -21,13 +22,27 @@ export default function CampaignFormScreen() {
   const [variables, setVariables] = useState<string[]>([]);
   const [headerMedia, setHeaderMedia] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     fetchCategories();
     fetchMetaTemplates();
+    fetchInternalTemplates();
     fetchLogs();
   }, []);
+
+  const fetchInternalTemplates = async () => {
+    try {
+      const token = await SecureStore.getItemAsync(CONFIG.API_TOKEN_KEY);
+      const response = await fetch(`${CONFIG.API_BASE}?route=campaign-templates`, {
+        headers: { 'Authorization': `Bearer ${token}`, 'X-API-Token': token }
+      });
+      const result = await response.json();
+      if (result.success) setInternalTemplates(result.data);
+    } catch (error) {}
+  };
 
   const fetchLogs = async () => {
     try {
@@ -77,7 +92,7 @@ export default function CampaignFormScreen() {
     
     let result;
     if (type === 'Image') {
-      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.7 });
+      result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, quality: 0.7 });
     } else if (type === 'Video') {
       result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: true });
     } else {
@@ -143,6 +158,20 @@ export default function CampaignFormScreen() {
       });
       const result = await response.json();
       if (result.success) {
+        if (saveAsTemplate && templateName) {
+          // Also save as an internal template for reuse
+          await fetch(`${CONFIG.API_BASE}?route=campaign-templates`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, 'X-API-Token': token },
+            body: JSON.stringify({
+              name: templateName,
+              var1: variables[0] || '',
+              var2: variables[1] || '',
+              var3: variables[2] || '',
+              image_path: headerMedia
+            })
+          });
+        }
         fetchLogs();
         Alert.alert('Launched', `Campaign queued for ${result.recipients_count} recipients.`);
       }
@@ -185,13 +214,33 @@ export default function CampaignFormScreen() {
             <TouchableOpacity style={styles.templatePicker} onPress={() => setShowMetaModal(true)}>
               <Ionicons name="logo-whatsapp" size={24} color="#12836f" />
               <View style={{ flex: 1 }}>
-                <Text style={styles.templatePickerLabel}>Selected Template</Text>
+                <Text style={styles.templatePickerLabel}>Selected Meta Template</Text>
                 <Text style={styles.templatePickerText}>
-                  {selectedMetaTemplate ? selectedMetaTemplate.template_name : 'Click to select template'}
+                  {selectedMetaTemplate ? selectedMetaTemplate.template_name : 'Click to select meta template'}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#cbd5e1" />
             </TouchableOpacity>
+
+            {internalTemplates.length > 0 && (
+              <View style={{ marginTop: 15 }}>
+                <Text style={styles.label}>Quick Load Saved Content</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                  {internalTemplates.map(it => (
+                    <TouchableOpacity 
+                      key={it.id} 
+                      style={styles.internalTemplateChip}
+                      onPress={() => {
+                        setVariables([it.var1, it.var2, it.var3]);
+                        setHeaderMedia(it.image_path || '');
+                      }}
+                    >
+                      <Text style={styles.internalTemplateChipText}>{it.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {selectedMetaTemplate && (
               <View style={styles.templateDetails}>
@@ -260,6 +309,29 @@ export default function CampaignFormScreen() {
                 </View>
               </View>
             )}
+
+            <View style={styles.saveTemplateSection}>
+              <TouchableOpacity 
+                style={styles.checkboxContainer} 
+                onPress={() => setSaveAsTemplate(!saveAsTemplate)}
+              >
+                <Ionicons 
+                  name={saveAsTemplate ? "checkbox" : "square-outline"} 
+                  size={20} 
+                  color={saveAsTemplate ? "#12836f" : "#cbd5e1"} 
+                />
+                <Text style={styles.checkboxLabel}>Save this message as a template</Text>
+              </TouchableOpacity>
+              
+              {saveAsTemplate && (
+                <TextInput 
+                  style={[styles.input, { marginTop: 10 }]} 
+                  placeholder="Enter template name (e.g. Follow-up Promo)"
+                  value={templateName}
+                  onChangeText={setTemplateName}
+                />
+              )}
+            </View>
 
             <TouchableOpacity 
               style={[styles.sendBtn, (!selectedMetaTemplate || loading) && { opacity: 0.6 }]} 
@@ -363,6 +435,35 @@ const styles = StyleSheet.create({
   previewContent: { fontSize: 14, color: '#0c4a6e', lineHeight: 20 },
   sendBtn: { backgroundColor: '#10b981', borderRadius: 16, padding: 18, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   sendBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  saveTemplateSection: {
+    marginVertical: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  internalTemplateChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  internalTemplateChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6366f1',
+  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
