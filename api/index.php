@@ -642,9 +642,10 @@ function reports_handler($conn, $doctor)
     $today = date('Y-m-d');
     
     // Today's OPD Status
-    $today_new = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'New' AND appointment_date = ?", 'is', [$doctor_id, $today]);
+    // More robust 'New' count: Patients whose first ever appointment is today
+    $today_new = count_rows($conn, "SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = ? AND a.appointment_date = ? AND NOT EXISTS (SELECT 1 FROM appointments a2 WHERE a2.patient_id = a.patient_id AND a2.appointment_date < a.appointment_date)", 'is', [$doctor_id, $today]);
     $today_scheduled_followup = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND next_followup_date = ?", 'is', [$doctor_id, $today]);
-    $today_actual_followup = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'Old' AND appointment_date = ?", 'is', [$doctor_id, $today]);
+    $today_actual_followup = count_rows($conn, "SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = ? AND a.appointment_date = ? AND EXISTS (SELECT 1 FROM appointments a2 WHERE a2.patient_id = a.patient_id AND a2.appointment_date < a.appointment_date)", 'is', [$doctor_id, $today]);
 
     // Future Follow-up Targets (Next 7 days)
     $stmt = mysqli_prepare($conn, "SELECT next_followup_date, COUNT(*) AS count FROM appointments WHERE doctor_id = ? AND next_followup_date > ? AND next_followup_date <= ? GROUP BY next_followup_date ORDER BY next_followup_date ASC");

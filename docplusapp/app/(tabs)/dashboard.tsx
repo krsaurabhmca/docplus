@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { CONFIG } from '../../constants/Config';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function DashboardScreen() {
   const [data, setData] = useState<any>(null);
@@ -65,12 +67,29 @@ export default function DashboardScreen() {
     );
   }
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }} edges={['left', 'right']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#12836f' }} edges={['top', 'left', 'right']}>
+      <StatusBar style="light" />
+      <Stack.Screen options={{ 
+        headerShown: true, 
+        title: 'Clinic Dashboard',
+        headerStyle: { backgroundColor: '#12836f' },
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: '900', fontSize: 20 },
+        headerShadowVisible: false,
+        headerLeft: () => (
+          <TouchableOpacity style={{ marginRight: 15 }} onPress={() => fetchData()}>
+            <Ionicons name="refresh-circle" size={28} color="#fff" />
+          </TouchableOpacity>
+        )
+      }} />
       <ScrollView
         style={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} color="#12836f" />}
       >
+        <LinearGradient
+          colors={['#12836f', '#f8fafc']}
+          style={styles.topGradient}
+        />
         {/* <View style={styles.header}>
         <Text style={styles.welcome}>Welcome back,</Text>
         <Text style={styles.title}>Clinic Overview</Text>
@@ -95,39 +114,47 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.metricsGrid}>
-          <View style={styles.metricCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#e0f2fe' }]}>
-              <Ionicons name="people-outline" size={24} color="#0369a1" />
+          <LinearGradient colors={['#0ea5e9', '#0284c7']} style={styles.metricCardColor}>
+            <View style={styles.iconContainerWhite}>
+              <Ionicons name="people" size={24} color="#0284c7" />
             </View>
-            <Text style={styles.metricLabel}>Total Patients</Text>
-            <Text style={styles.metricValue}>{data?.total_patients || 0}</Text>
-          </View>
+            <View>
+              <Text style={styles.metricLabelWhite}>Total Patients</Text>
+              <Text style={styles.metricValueWhite}>{data?.total_patients || 0}</Text>
+            </View>
+          </LinearGradient>
 
-          <View style={styles.metricCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#ecfdf5' }]}>
-              <Ionicons name="cash-outline" size={24} color="#059669" />
+          <LinearGradient colors={['#10b981', '#059669']} style={styles.metricCardColor}>
+            <View style={styles.iconContainerWhite}>
+              <Ionicons name="cash" size={24} color="#059669" />
             </View>
-            <Text style={styles.metricLabel}>Month Income</Text>
-            <Text style={styles.metricValue}>₹{Math.round(data?.summary?.total_income || 0)}</Text>
-          </View>
+            <View>
+              <Text style={styles.metricLabelWhite}>Month Income</Text>
+              <Text style={styles.metricValueWhite}>₹{Math.round(data?.summary?.total_income || 0)}</Text>
+            </View>
+          </LinearGradient>
         </View>
 
         <View style={styles.metricsGrid}>
-          <View style={styles.metricCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="calendar-outline" size={24} color="#b45309" />
+          <LinearGradient colors={['#f59e0b', '#d97706']} style={styles.metricCardColor}>
+            <View style={styles.iconContainerWhite}>
+              <Ionicons name="calendar" size={24} color="#d97706" />
             </View>
-            <Text style={styles.metricLabel}>Total Visits</Text>
-            <Text style={styles.metricValue}>{data?.summary?.total_appointments || 0}</Text>
-          </View>
+            <View>
+              <Text style={styles.metricLabelWhite}>Total Visits</Text>
+              <Text style={styles.metricValueWhite}>{data?.summary?.total_appointments || 0}</Text>
+            </View>
+          </LinearGradient>
 
-          <View style={styles.metricCard}>
-            <View style={[styles.iconContainer, { backgroundColor: '#f3e8ff' }]}>
-              <Ionicons name="stats-chart-outline" size={24} color="#7e22ce" />
+          <LinearGradient colors={['#8b5cf6', '#7c3aed']} style={styles.metricCardColor}>
+            <View style={styles.iconContainerWhite}>
+              <Ionicons name="stats-chart" size={24} color="#7c3aed" />
             </View>
-            <Text style={styles.metricLabel}>Today OPD</Text>
-            <Text style={styles.metricValue}>{(data?.today?.new || 0) + (data?.today?.actual || 0)}</Text>
-          </View>
+            <View>
+              <Text style={styles.metricLabelWhite}>Today OPD</Text>
+              <Text style={styles.metricValueWhite}>{(data?.today?.new || 0) + (data?.today?.actual || 0)}</Text>
+            </View>
+          </LinearGradient>
         </View>
 
         {data?.future && data.future.length > 0 && (
@@ -220,6 +247,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8fafc',
   },
+  topGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 120,
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -229,7 +263,7 @@ const styles = StyleSheet.create({
   todayCard: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
-    marginTop: 20,
+    marginTop: 10,
     marginBottom: 24,
     borderRadius: 24,
     padding: 20,
@@ -237,9 +271,41 @@ const styles = StyleSheet.create({
     borderColor: '#f1f5f9',
     shadowColor: '#12836f',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 20,
-    elevation: 4,
+    elevation: 6,
+  },
+  metricCardColor: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  iconContainerWhite: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  metricLabelWhite: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.8)',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  metricValueWhite: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#fff',
   },
   todayTitle: {
     fontSize: 11,
