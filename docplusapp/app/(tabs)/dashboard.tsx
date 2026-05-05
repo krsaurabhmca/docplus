@@ -69,8 +69,8 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#12836f' }} edges={['top', 'left', 'right']}>
       <StatusBar style="light" />
-      <Stack.Screen options={{ 
-        headerShown: true, 
+      <Stack.Screen options={{
+        headerShown: true,
         title: 'Clinic Dashboard',
         headerStyle: { backgroundColor: '#12836f' },
         headerTintColor: '#fff',
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    height: 120,
+    height: 90,
   },
   centered: {
     flex: 1,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   todayCard: {
     backgroundColor: '#fff',
     marginHorizontal: 20,
-    marginTop: 10,
+    marginTop: 0,
     marginBottom: 24,
     borderRadius: 24,
     padding: 20,

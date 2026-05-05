@@ -89,18 +89,25 @@ require_once 'includes/header.php';
         </div>
         <div class="table-wrap">
             <table>
-                <thead><tr><th><?php echo sort_link('Name', 'name', $sort, $dir); ?></th><th><?php echo sort_link('Patients', 'patients', $sort, $dir); ?></th><th>Action</th></tr></thead>
+                <thead><tr><th><?php echo sort_link('Name', 'name', $sort, $dir); ?></th><th>Patients</th><th>Action</th></tr></thead>
                 <tbody>
                 <?php if (mysqli_num_rows($categories) === 0): ?>
                     <tr><td colspan="3" class="empty-cell">No categories found.</td></tr>
                 <?php endif; ?>
                 <?php while ($row = mysqli_fetch_assoc($categories)): ?>
                     <tr>
-                        <td><?php echo e($row['name']); ?><br><span class="muted"><?php echo e($row['description']); ?></span></td>
-                        <td><?php echo (int)$row['patient_count']; ?></td>
+                        <td>
+                            <div style="font-weight: 800; color: var(--text);"><?php echo e($row['name']); ?></div>
+                            <div class="muted" style="font-size: 13px; margin-top: 2px;"><?php echo e($row['description']); ?></div>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: #f0fdfa; color: #12836f; font-weight: 800; padding: 4px 12px;">
+                                <?php echo (int)$row['patient_count']; ?> Patients
+                            </span>
+                        </td>
                         <td class="actions">
-                            <a class="btn btn-icon btn-edit" href="categories.php?edit=<?php echo (int)$row['id']; ?>" title="Edit category" aria-label="Edit category"><?php echo icon('edit'); ?></a>
-                            <a class="btn btn-icon btn-delete" href="categories.php?delete=<?php echo (int)$row['id']; ?>" title="Delete category" aria-label="Delete category" onclick="return confirm('Delete this category?')"><?php echo icon('delete'); ?></a>
+                            <a class="btn btn-icon btn-edit" href="categories.php?edit=<?php echo (int)$row['id']; ?>" title="Edit category"><?php echo icon('edit'); ?></a>
+                            <a class="btn btn-icon btn-delete" href="categories.php?delete=<?php echo (int)$row['id']; ?>" title="Delete" onclick="return confirm('Delete this category?')"><?php echo icon('delete'); ?></a>
                         </td>
                     </tr>
                 <?php endwhile; ?>

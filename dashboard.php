@@ -8,7 +8,9 @@ $month_end = date('Y-m-t');
 
 $total_patients = count_rows($conn, 'SELECT COUNT(*) FROM patients WHERE doctor_id = ?', 'i', [$doctor_id]);
 $today_appointments = count_rows($conn, 'SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_date = ?', 'is', [$doctor_id, $today]);
-$new_patients = count_rows($conn, "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND appointment_type = 'New'", 'i', [$doctor_id]);
+
+// Accurate 'New' count: Patients whose first ever appointment is today
+$today_new = count_rows($conn, "SELECT COUNT(*) FROM appointments a WHERE a.doctor_id = ? AND a.appointment_date = ? AND NOT EXISTS (SELECT 1 FROM appointments a2 WHERE a2.patient_id = a.patient_id AND a2.appointment_date < a.appointment_date)", 'is', [$doctor_id, $today]);
 
 $stmt = mysqli_prepare($conn, 'SELECT COALESCE(SUM(fee),0) AS income FROM appointments WHERE doctor_id = ? AND appointment_date BETWEEN ? AND ?');
 mysqli_stmt_bind_param($stmt, 'iss', $doctor_id, $month_start, $month_end);
@@ -33,30 +35,30 @@ require_once 'includes/header.php';
     <div class="quick-actions" style="gap: 8px;">
         <a class="btn btn-primary" href="patient-form.php"><?php echo icon('plus'); ?> Add Patient</a>
         <a class="btn btn-soft" href="appointment-form.php"><?php echo icon('calendar'); ?> New Appointment</a>
-        <a class="btn" href="calendar.php"><?php echo icon('overview'); ?> Calendar</a>
+        <a class="btn" href="categories.php"><?php echo icon('category'); ?> Categories</a>
     </div>
 </section>
 
 <section class="grid grid-4" style="margin-top:12px;">
-    <div class="card metric">
-        <?php echo icon('patients'); ?><div class="metric-icon"></div>
+    <div class="card metric card-sky metric-white">
+        <div class="icon-box"><?php echo icon('patients'); ?></div>
         <span>Total Patients</span>
-        <strong><?php echo $total_patients; ?></strong>
+        <strong><?php echo number_format($total_patients); ?></strong>
     </div>
-    <div class="card metric">
-        <?php echo icon('calendar'); ?><div class="metric-icon"></div>
-        <span>Today Appointments</span>
-        <strong><?php echo $today_appointments; ?></strong>
-    </div>
-    <div class="card metric">
-        <?php echo icon('plus'); ?><div class="metric-icon"></div>
-        <span>New Visits</span>
-        <strong><?php echo $new_patients; ?></strong>
-    </div>
-    <div class="card metric">
-        <?php echo icon('reports'); ?><div class="metric-icon"></div>
+    <div class="card metric card-emerald metric-white">
+        <div class="icon-box"><?php echo icon('reports'); ?></div>
         <span>Month Income</span>
         <strong>Rs. <?php echo number_format((float)$income, 2); ?></strong>
+    </div>
+    <div class="card metric card-amber metric-white">
+        <div class="icon-box"><?php echo icon('calendar'); ?></div>
+        <span>Total Appointments</span>
+        <strong><?php echo number_format($today_appointments); ?></strong>
+    </div>
+    <div class="card metric card-violet metric-white">
+        <div class="icon-box"><?php echo icon('plus'); ?></div>
+        <span>Today New OPD</span>
+        <strong><?php echo number_format($today_new); ?></strong>
     </div>
 </section>
 

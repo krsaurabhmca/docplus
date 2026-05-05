@@ -397,6 +397,26 @@ body.sidebar-collapsed .logout {
     margin-bottom: 0;
 }
 
+/* Colorful Metric Cards */
+.card-sky { background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); color: #fff; border: none; }
+.card-emerald { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: #fff; border: none; }
+.card-amber { background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; border: none; }
+.card-violet { background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: #fff; border: none; }
+
+.metric-white span { color: rgba(255,255,255,0.8); }
+.metric-white strong { color: #fff; }
+.metric-white .icon-box {
+    background: rgba(255,255,255,0.2);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+}
+
 .btn {
     border: 1px solid var(--line);
     background: #fff;

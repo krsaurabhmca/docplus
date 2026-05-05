@@ -137,9 +137,9 @@ export default function ProfileEditScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <StatusBar style="dark" />
-      <Stack.Screen options={{ 
+      <Stack.Screen options={{
         headerShown: true,
-        title: 'Edit Profile', 
+        title: 'Edit Profile',
         headerShadowVisible: false,
         headerStyle: { backgroundColor: '#f8fafc' },
         headerTintColor: '#0f172a',
@@ -203,13 +203,13 @@ export default function ProfileEditScreen() {
 
           <View style={[styles.card, { marginTop: 20, borderColor: '#ccfbf1', backgroundColor: '#f0fdfa' }]}>
             <Text style={[styles.sectionTitle, { color: '#12836f' }]}>WhatsApp API Configuration</Text>
-            <Text style={styles.waHint}>Connect your official WhatsApp channel using the AOC Portal API credentials.</Text>
+            <Text style={styles.waHint}>Connect your official WhatsApp API credentials.</Text>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>WhatsApp From Number</Text>
+              <Text style={styles.label}>Reg. WhatsApp Number</Text>
               <TextInput style={styles.input} value={form.whatsapp_from} onChangeText={v => setForm(p => ({ ...p, whatsapp_from: v }))} placeholder="e.g. +91XXXXXXXXXX" autoCapitalize="none" />
             </View>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>AOC API Key</Text>
+              <Text style={styles.label}>API Key</Text>
               <TextInput style={styles.input} value={form.whatsapp_api_key} onChangeText={v => setForm(p => ({ ...p, whatsapp_api_key: v }))} placeholder="Your official API key" secureTextEntry autoCapitalize="none" />
             </View>
           </View>
