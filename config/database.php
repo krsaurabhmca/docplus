@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Kolkata');
 // Environment Detection
-$is_live = ($_SERVER['HTTP_HOST'] === 'docplus.offerplant.com');
+$is_live = (($_SERVER['HTTP_HOST'] ?? '') === 'docplus.offerplant.com');
 
 if ($is_live) {
     // Live Database Credentials (Hostinger/Remote)
