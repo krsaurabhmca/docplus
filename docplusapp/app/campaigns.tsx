@@ -300,7 +300,9 @@ export default function CampaignsScreen() {
                     style={[styles.catChip, form.category_ids.includes(cat.id) && styles.catChipActive]}
                     onPress={() => toggleCategory(cat.id)}
                   >
-                    <Text style={[styles.catChipText, form.category_ids.includes(cat.id) && styles.catChipTextActive]}>{cat.name}</Text>
+                    <Text style={[styles.catChipText, form.category_ids.includes(cat.id) && styles.catChipTextActive]}>
+                      {cat.name} ({cat.patient_count || 0})
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>

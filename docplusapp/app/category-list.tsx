@@ -69,7 +69,12 @@ export default function CategoryListScreen() {
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <View style={styles.cardContent}>
-        <Text style={styles.name}>{item.name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <Text style={styles.name}>{item.name}</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{item.patient_count || 0}</Text>
+          </View>
+        </View>
         {item.description ? <Text style={styles.desc}>{item.description}</Text> : null}
       </View>
       <View style={styles.actions}>
@@ -144,5 +149,7 @@ const styles = StyleSheet.create({
   empty: { padding: 60, alignItems: 'center' },
   emptyIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   emptyText: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
-  emptySub: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginTop: 8, lineHeight: 20 }
+  emptySub: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  countBadge: { backgroundColor: '#e0f2fe', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginLeft: 8 },
+  countText: { fontSize: 11, fontWeight: '800', color: '#0369a1' }
 });

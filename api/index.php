@@ -254,7 +254,12 @@ function categories_handler($conn, $doctor, $method, $id)
             $params[] = '%' . $q . '%';
         }
         $total = count_rows($conn, 'SELECT COUNT(*) FROM patient_categories' . $where, $types, $params);
-        $sql = 'SELECT * FROM patient_categories' . $where . ' ORDER BY name ASC LIMIT ? OFFSET ?';
+        $sql = 'SELECT c.*, COUNT(cl.patient_id) as patient_count 
+                FROM patient_categories c 
+                LEFT JOIN patient_category_links cl ON c.id = cl.category_id' . 
+                str_replace('doctor_id', 'c.doctor_id', $where) . ' 
+                GROUP BY c.id 
+                ORDER BY c.name ASC LIMIT ? OFFSET ?';
         $types .= 'ii';
         $params[] = $limit;
         $params[] = $offset;

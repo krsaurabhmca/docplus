@@ -172,7 +172,9 @@ export default function CampaignFormScreen() {
               </TouchableOpacity>
               {categories.map(cat => (
                 <TouchableOpacity key={cat.id} style={[styles.catBadge, selectedCategories.includes(cat.id) && styles.catBadgeActive]} onPress={() => setSelectedCategories(prev => prev.includes(cat.id) ? prev.filter(i => i !== cat.id) : [...prev, cat.id])}>
-                  <Text style={[styles.catText, selectedCategories.includes(cat.id) && styles.catTextActive]}>{cat.name}</Text>
+                  <Text style={[styles.catText, selectedCategories.includes(cat.id) && styles.catTextActive]}>
+                    {cat.name} ({cat.patient_count || 0})
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
