@@ -10,6 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fee_repeat_days = (int)($_POST['fee_repeat_days'] ?? 0);
     $clinic_name = clean_input($_POST['clinic_name'] ?? '');
     $clinic_address = clean_input($_POST['clinic_address'] ?? '');
+    $whatsapp_from = clean_input($_POST['whatsapp_from'] ?? '');
+    $whatsapp_api_key = clean_input($_POST['whatsapp_api_key'] ?? '');
     $photo_path = null;
 
     if (!empty($_FILES['photo']['name']) && is_uploaded_file($_FILES['photo']['tmp_name'])) {
@@ -29,11 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($photo_path) {
-        $stmt = mysqli_prepare($conn, 'UPDATE doctors SET name = ?, qualification = ?, specialization = ?, photo_path = ?, fee = ?, fee_repeat_days = ?, clinic_name = ?, clinic_address = ? WHERE id = ?');
-        mysqli_stmt_bind_param($stmt, 'ssssdissi', $name, $qualification, $specialization, $photo_path, $fee, $fee_repeat_days, $clinic_name, $clinic_address, $doctor_id);
+        $stmt = mysqli_prepare($conn, 'UPDATE doctors SET name = ?, qualification = ?, specialization = ?, photo_path = ?, fee = ?, fee_repeat_days = ?, clinic_name = ?, clinic_address = ?, whatsapp_from = ?, whatsapp_api_key = ? WHERE id = ?');
+        mysqli_stmt_bind_param($stmt, 'ssssdissssi', $name, $qualification, $specialization, $photo_path, $fee, $fee_repeat_days, $clinic_name, $clinic_address, $whatsapp_from, $whatsapp_api_key, $doctor_id);
     } else {
-        $stmt = mysqli_prepare($conn, 'UPDATE doctors SET name = ?, qualification = ?, specialization = ?, fee = ?, fee_repeat_days = ?, clinic_name = ?, clinic_address = ? WHERE id = ?');
-        mysqli_stmt_bind_param($stmt, 'sssdissi', $name, $qualification, $specialization, $fee, $fee_repeat_days, $clinic_name, $clinic_address, $doctor_id);
+        $stmt = mysqli_prepare($conn, 'UPDATE doctors SET name = ?, qualification = ?, specialization = ?, fee = ?, fee_repeat_days = ?, clinic_name = ?, clinic_address = ?, whatsapp_from = ?, whatsapp_api_key = ? WHERE id = ?');
+        mysqli_stmt_bind_param($stmt, 'sssdissssi', $name, $qualification, $specialization, $fee, $fee_repeat_days, $clinic_name, $clinic_address, $whatsapp_from, $whatsapp_api_key, $doctor_id);
     }
     mysqli_stmt_execute($stmt);
 
@@ -97,6 +99,16 @@ require_once 'includes/header.php';
         <div class="field full">
             <label for="clinic_address">Clinic Address</label>
             <textarea id="clinic_address" name="clinic_address"><?php echo e($doctor['clinic_address']); ?></textarea>
+        </div>
+        <div class="field">
+            <label for="whatsapp_from">WhatsApp From Number</label>
+            <input id="whatsapp_from" name="whatsapp_from" value="<?php echo e($doctor['whatsapp_from']); ?>" placeholder="+91XXXXXXXXXX">
+            <p class="muted">Your registered WhatsApp business number.</p>
+        </div>
+        <div class="field">
+            <label for="whatsapp_api_key">AOC API Key</label>
+            <input id="whatsapp_api_key" name="whatsapp_api_key" value="<?php echo e($doctor['whatsapp_api_key']); ?>" placeholder="Enter your API Key">
+            <p class="muted">AOC Portal official API Key for WhatsApp.</p>
         </div>
         <div class="field full">
             <button class="btn btn-primary" type="submit"><?php echo icon('save'); ?> Save Profile</button>
