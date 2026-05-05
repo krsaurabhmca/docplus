@@ -97,29 +97,49 @@ export default function DashboardScreen() {
       <View style={styles.metricsGrid}>
         <View style={styles.metricCard}>
           <View style={[styles.iconContainer, { backgroundColor: '#e0f2fe' }]}>
-            <Ionicons name="cash-outline" size={24} color="#0369a1" />
+            <Ionicons name="people-outline" size={24} color="#0369a1" />
           </View>
-          <Text style={styles.metricLabel}>Income</Text>
-          <Text style={styles.metricValue}>₹{data?.summary?.total_income || 0}</Text>
+          <Text style={styles.metricLabel}>Total Patients</Text>
+          <Text style={styles.metricValue}>{data?.total_patients || 0}</Text>
         </View>
 
         <View style={styles.metricCard}>
           <View style={[styles.iconContainer, { backgroundColor: '#ecfdf5' }]}>
-            <Ionicons name="calendar-outline" size={24} color="#059669" />
+            <Ionicons name="cash-outline" size={24} color="#059669" />
+          </View>
+          <Text style={styles.metricLabel}>Month Income</Text>
+          <Text style={styles.metricValue}>₹{Math.round(data?.summary?.total_income || 0)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.metricsGrid}>
+        <View style={styles.metricCard}>
+          <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+            <Ionicons name="calendar-outline" size={24} color="#b45309" />
           </View>
           <Text style={styles.metricLabel}>Total Visits</Text>
           <Text style={styles.metricValue}>{data?.summary?.total_appointments || 0}</Text>
+        </View>
+
+        <View style={styles.metricCard}>
+          <View style={[styles.iconContainer, { backgroundColor: '#f3e8ff' }]}>
+            <Ionicons name="stats-chart-outline" size={24} color="#7e22ce" />
+          </View>
+          <Text style={styles.metricLabel}>Today OPD</Text>
+          <Text style={styles.metricValue}>{ (data?.today?.new || 0) + (data?.today?.actual || 0) }</Text>
         </View>
       </View>
 
       {data?.future && data.future.length > 0 && (
         <View style={styles.futureSection}>
-          <Text style={styles.sectionTitle}>Future Targets (Next 7 Days)</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Upcoming Targets</Text>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.futureGrid}>
             {data.future.map((f: any, i: number) => (
               <View key={i} style={styles.futureCard}>
                 <Text style={styles.futureDate}>{new Date(f.next_followup_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
-                <Text style={styles.futureCount}>{f.count} Follow-ups</Text>
+                <Text style={styles.futureCount}>{f.count} Patients</Text>
               </View>
             ))}
           </ScrollView>
@@ -181,7 +201,7 @@ export default function DashboardScreen() {
                 <Text style={styles.activityPatient}>{item.patient_name}</Text>
                 <Text style={styles.activityMeta}>{item.appointment_type} Visit • {new Date(item.appointment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</Text>
               </View>
-              <Text style={styles.activityIncome}>₹{item.fee}</Text>
+              <Text style={styles.activityIncome}>₹{Math.round(item.fee)}</Text>
             </TouchableOpacity>
           ))
         ) : (

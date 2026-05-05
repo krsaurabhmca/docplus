@@ -609,6 +609,9 @@ function reports_handler($conn, $doctor)
     mysqli_stmt_execute($stmt);
     $future_followups = rows_from_result(mysqli_stmt_get_result($stmt));
 
+    // Total Patients registered
+    $total_patients = count_rows($conn, 'SELECT COUNT(*) FROM patients WHERE doctor_id = ?', 'i', [$doctor_id]);
+
     api_response([
         'success' => true, 
         'data' => [
@@ -621,6 +624,7 @@ function reports_handler($conn, $doctor)
             ],
             'future' => $future_followups,
             'summary' => $summary, 
+            'total_patients' => $total_patients,
             'new_patients' => $new_count, 
             'old_patients' => $old_count, 
             'daily' => $daily
