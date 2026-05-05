@@ -319,13 +319,21 @@ function patients_handler($conn, $doctor, $method, $id, $sub)
                 api_error('Patient not found.', 404);
             }
         }
+        $from_date = clean_input($_GET['from_date'] ?? '');
+        $to_date = clean_input($_GET['to_date'] ?? '');
+        $min_age = isset($_GET['min_age']) ? (int)$_GET['min_age'] : null;
+        $max_age = isset($_GET['max_age']) ? (int)$_GET['max_age'] : null;
+        $category_id = isset($_GET['category_id']) && $_GET['category_id'] !== '' ? (int)$_GET['category_id'] : null;
         $q = clean_input($_GET['q'] ?? '');
+        
         $page = api_page();
         $limit = api_limit();
         $offset = ($page - 1) * $limit;
+        
         $where = ' WHERE p.doctor_id = ?';
         $types = 'i';
         $params = [$doctor_id];
+
         if ($q !== '') {
             $where .= ' AND (p.name LIKE ? OR p.mobile LIKE ? OR p.address LIKE ?)';
             $types .= 'sss';
@@ -333,7 +341,38 @@ function patients_handler($conn, $doctor, $method, $id, $sub)
             $params[] = '%' . $q . '%';
             $params[] = '%' . $q . '%';
         }
-        $total = count_rows($conn, 'SELECT COUNT(DISTINCT p.id) FROM patients p LEFT JOIN patient_category_links cl ON cl.patient_id = p.id' . $where, $types, $params);
+
+        if ($category_id) {
+            $where .= ' AND EXISTS (SELECT 1 FROM patient_category_links cl WHERE cl.patient_id = p.id AND cl.category_id = ?)';
+            $types .= 'i';
+            $params[] = $category_id;
+        }
+
+        if ($min_age !== null) {
+            $where .= ' AND p.age >= ?';
+            $types .= 'i';
+            $params[] = $min_age;
+        }
+
+        if ($max_age !== null) {
+            $where .= ' AND p.age <= ?';
+            $types .= 'i';
+            $params[] = $max_age;
+        }
+
+        if ($from_date !== '') {
+            $where .= ' AND DATE(p.created_at) >= ?';
+            $types .= 's';
+            $params[] = $from_date;
+        }
+
+        if ($to_date !== '') {
+            $where .= ' AND DATE(p.created_at) <= ?';
+            $types .= 's';
+            $params[] = $to_date;
+        }
+
+        $total = count_rows($conn, 'SELECT COUNT(DISTINCT p.id) FROM patients p' . $where, $types, $params);
         $sql = 'SELECT p.*, GROUP_CONCAT(c.name SEPARATOR ", ") AS category_name FROM patients p LEFT JOIN patient_category_links cl ON cl.patient_id = p.id LEFT JOIN patient_categories c ON c.id = cl.category_id' . $where . ' GROUP BY p.id ORDER BY p.id DESC LIMIT ? OFFSET ?';
         $types .= 'ii';
         $params[] = $limit;

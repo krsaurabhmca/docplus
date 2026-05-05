@@ -67,7 +67,10 @@ export default function CategoryListScreen() {
   };
 
   const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={() => router.push({ pathname: '/(tabs)/patients', params: { category_id: item.id } })}
+    >
       <View style={styles.cardContent}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
           <Text style={styles.name}>{item.name}</Text>
@@ -80,18 +83,18 @@ export default function CategoryListScreen() {
       <View style={styles.actions}>
         <TouchableOpacity 
           style={styles.actionBtn} 
-          onPress={() => router.push({ pathname: '/category-form', params: { id: item.id } })}
+          onPress={(e) => { e.stopPropagation(); router.push({ pathname: '/category-form', params: { id: item.id } }); }}
         >
           <Ionicons name="pencil-outline" size={18} color="#6366f1" />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.actionBtn} 
-          onPress={() => deleteCategory(item.id)}
+          onPress={(e) => { e.stopPropagation(); deleteCategory(item.id); }}
         >
           <Ionicons name="trash-outline" size={18} color="#ef4444" />
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
