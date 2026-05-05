@@ -55,14 +55,17 @@ function bind_params($stmt, $types, $params)
 
 function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url, $variables, $header_type = 'image')
 {
-    // Use working credentials as defaults if doctor config is missing
-    $api_key = !empty($doctor['whatsapp_api_key']) ? $doctor['whatsapp_api_key'] : "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ";
+    // The Master Key and Number must always be used together
+    $master_key = "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ";
+    $master_number = "+918271807608";
+
+    $api_key = !empty($doctor['whatsapp_api_key']) ? $doctor['whatsapp_api_key'] : $master_key;
     
-    // If using the default master key, we must use the master authorized number
-    if ($api_key === "urc3jWG5z6UWep1qhrDz2OuX1JUxFQ") {
-        $from_number = "+918271807608";
+    // If using the master key, we MUST use the master number
+    if ($api_key === $master_key) {
+        $from_number = $master_number;
     } else {
-        $from_number = !empty($doctor['whatsapp_from']) ? $doctor['whatsapp_from'] : "+918271807608";
+        $from_number = !empty($doctor['whatsapp_from']) ? $doctor['whatsapp_from'] : $master_number;
     }
 
     $url = "https://api.aoc-portal.com/v1/whatsapp";
@@ -75,7 +78,7 @@ function send_whatsapp_template($doctor, $to_mobile, $template_name, $header_url
 
     $payload = [
         "from" => $from,
-        "campaignName" => "DocPlus_Outreach",
+        "campaignName" => "DocPlus_Outreach_" . bin2hex(random_bytes(4)),
         "to" => $to,
         "templateName" => $template_name,
         "components" => [
