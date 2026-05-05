@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
 import { useRouter, Stack } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
-import { CONFIG } from '../constants/Config';
+import { CONFIG } from '../../constants/Config';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Template = {
